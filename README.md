@@ -85,7 +85,7 @@ The firmware for Agilent 82357B is *measat_releaseX1.8.hex* in folder /opt/gpib_
 
 * Check the current firmware version of the connected USB device
 >
-    GPIB_DEV=`lsusb | grep Agilent
+    GPIB_DEV=`lsusb | grep Agilent`
     FIRMWARE=`echo $GPIB_DEV | awk '{ print $6 }'`
 
  
@@ -98,6 +98,7 @@ The firmware for Agilent 82357B is *measat_releaseX1.8.hex* in folder /opt/gpib_
 
 * Load the firmware into the Agilent 82357B
 
+	export FIRMWARE_FILE=/opt/gpib_firmware-2008-08-10/agilent_82357a/82357a_fw.hex
     fxload -t fx2 -D $DEV -I $FIRMWARE_FILE
     
 If final firmware must be **0957:0718**. If not, use fxload again. In two steps the firmware should be loaded and the lights should be green.
