@@ -1,0 +1,5 @@
+{
+  "version": 1.0,
+  "MuziekRestServerxx": "https://hp-probook:3000/music_collection",
+  "MuziekRestServer": "http://localhost:3000/music_collection"
+}

@@ -1,0 +1,17 @@
+<label for="">Device</label>
+
+<input [(ngModel)]="taFieldsFormData.gpib_device" 
+    name="gpib_device" id="gpib_device" #gpib_device
+    [ngClass]="inputClass(gpib_device)" (typeaheadNoResults)="typeaheadNoResults('gpib_device', $event)"
+    (typeaheadLoading)="taIsLoading($event)" typeaheadOptionField="DESCRIPTION" [typeaheadScrollable]="true"
+    [ngClass]="gpib_deviceClass()" 
+    [typeahead]="getgpib_device$" 
+    [typeaheadOptionsInScrollableView]="5"
+    [typeaheadWaitMs]="500" (typeaheadOnSelect)="ongpib_deviceSelect($event)" class="form-control">
+
+<div class="alert alert-danger" *ngIf="mode=='search-music-collection' && taFieldsTAError.get('title')">
+</div>
+
+<div class="alert alert-info" *ngIf="mode=='add' && taFieldsTAError.get('gpib_device')">
+    Nieuw
+</div>
