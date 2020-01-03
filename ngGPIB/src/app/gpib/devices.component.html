@@ -85,7 +85,7 @@
                         <th>
                             <mfDefaultSorter by="DEVICE_CODE">Code</mfDefaultSorter>
                         </th>
-                        
+
                     </tr>
 
 
@@ -93,8 +93,9 @@
                 </thead>
                 <tbody>
                     <tr *ngFor="let item of mf.data;let i=index">
-                        <td><input type="checkbox" name="chk{{i}}" id="chk{{i}}" value="{{i}}" 
-                            (click)="checkboxSelect(item, i)" (change)='checkboxChange($event, i)'></td>
+                        <td><input type="checkbox" name="chk{{i}}" id="chk{{i}}" value="{{i}}"
+                                [checked]="checkboxSel[i]" (click)="checkboxSelect(item, i)"
+                                (change)='checkboxChange($event, i)'></td>
                         <td>{{item.COMMAND_GROUP}}</td>
                         <td>{{item.COMMAND_ID}}</td>
                         <td>{{item.COMMAND_DESCRIPTION}}</td>
@@ -108,7 +109,11 @@
                     </tr>
                 </tfoot>
             </table>
-
+            <label>Data to send</label>
+            <input type="text" name="send" id="send" class="form-control" value="Send data to device"
+                [(ngModel)]="data_to_send" placeholder="Sample command F1R1M0T4">
+            <button class="btn btn-info" [disabled]="data_to_send.length < 2" (click)="buttonSend($event)">
+                Send to Device </button>
         </tab>
     </tabset>
 

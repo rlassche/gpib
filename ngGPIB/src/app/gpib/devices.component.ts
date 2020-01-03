@@ -33,7 +33,8 @@ export class DevicesComponent implements OnInit {
     //console.log( sampleData)
   }
 
-
+  //checkboxSel:boolean[] = new Array(100);
+  checkboxSel:boolean[] = new Array();
   // **********************************************************************************************
   // TYPEAHEAD OBSERVABLE: taGetDevices$
   // **********************************************************************************************
@@ -49,6 +50,14 @@ export class DevicesComponent implements OnInit {
       (val: any) => {
         console.log('taGetDevice$: val: ', val.DATA);
         if (val.STATUS == "OK") {
+          let i=0;
+          console.log( val )
+          /*
+          val.DATA.array.forEach(element => {
+            console.log("set to true") ;
+            this.checkboxSel[i++] = true;
+          });
+          */
           // ***************************************************************
           // SEND THE RECEIVED DATA TO THE SUBSCRIBERS,
           // So, to the typeahead form
@@ -92,6 +101,7 @@ export class DevicesComponent implements OnInit {
 
   public gpib_device: GPIB_DEVICE
   public gpib_device_functions: DEVICE_FUNCTION[]
+  public data_to_send:string = '';
 
   onSelect(e: TypeaheadMatch, h: HTMLInputElement) {
     console.log("onSelect: item.ID=***" + e.item.ID + '****', h.name)
@@ -108,9 +118,15 @@ export class DevicesComponent implements OnInit {
       this.rest.getDeviceInfo(this.taFieldsFormData, this.taKeysDict, 'search').subscribe(
         (val) => {
           this.gpib_device = val.GPIB_DEVICE[0];
+          let i=0;
           console.log('onSelect: gpib_device ', this.gpib_device);
           console.log('onSelect: gpib_device.DEVICE_ID ', this.gpib_device.DEVICE_ID);
           this.gpib_device_functions = val.DEVICE_FUNCTION
+          this.gpib_device_functions.forEach(element => {
+            console.log("set to false") ;
+            //this.checkboxSel[i++] = false;
+            this.checkboxSel.push( false ) ;
+          });
           console.log('onSelect: gpib_device.DEVICE_FUNCTION ', this.gpib_device_functions);
         })
     }
@@ -122,11 +138,15 @@ export class DevicesComponent implements OnInit {
   checkboxChange( e, i) {
     console.log( 'checkboxChange', e, i )
     if( e.target.checked ) {
-      console.log( "YES, CHECKED, code ==", this.gpib_device_functions[i].DEVICE_CODE)
+      this.data_to_send += this.gpib_device_functions[i].DEVICE_CODE;
+      console.log( "YES, CHECKED, code ==", this.gpib_device_functions[i].DEVICE_CODE, this.data_to_send)
     } else {
       console.log( "NO, NOT CHECKED")
 
     }
+  }
+  buttonSend( e ) {
+    console.log( "sending to device: "+this.data_to_send)
   }
 
 }
