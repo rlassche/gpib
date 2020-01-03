@@ -3,6 +3,7 @@ use Mojo::Base 'Mojolicious';
 use Mojolicious::Plugin::Database;
 use Database;
 use Data::Dumper;
+use SDC::GPIB;
 
 
 # This method will run once at server start
@@ -46,8 +47,14 @@ sub startup {
                      LOG_LEVEL=>"FATAL",
                      LOG_CLASS => "testDatabase" );
 
+  my $gpib = new SDC::GPIB( DATABASE => $db ) ;
+  $self->app->log->info( 'gpib ' . Dumper( $gpib ) ) ;
+
   $self->app->helper( DATABASEHLP => sub {
             return { DATABASE => $db }
+        }) ;
+  $self->app->helper( SDCGPIBHLP => sub {
+            return { SDCGPIB => $gpib }
         }) ;
 
   # Router
@@ -59,6 +66,8 @@ sub startup {
 
   # Normal route to controller
   $r->get('/')->to('example#welcome');
+  $r->post('/gpib/taGetDevice')->to('Rest#taGetDevice');
+  $r->post('/gpib/getDeviceInfo')->to('Rest#getDeviceInfo');
 }
 
 1;

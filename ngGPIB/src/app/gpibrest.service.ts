@@ -6,6 +6,7 @@ import { taFieldsForm, typeaheadKeys} from './common'
 
 // Required needs this!
 declare var require: any;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -15,20 +16,32 @@ export class GpibrestService {
   private config;
   constructor(private http: HttpClient) { 
     this.config = require('../assets/config.' + location.hostname + '.json');
-    //console.log( sampleData)
+    console.log('Require: ../assets/config.' + location.hostname + '.json');
 
     this.headers = new HttpHeaders({
       "Content-Type": "multipart/form-data"
     });
     this.RESTRoot = this.config.RestServer;
-
+    console.log( "RESTRoot="+this.RESTRoot)
   }
 
-  ta_GPIB_Device(formFields:taFieldsForm , keys:Map<string,typeaheadKeys>, mode:string):Observable<any>  {
-    console.log( "ta_GPIB_Device: RestServer="+this.config.RestServer)
-    return this.http.post<any>(this.RESTRoot + '/ta_GPIB_Device',
-            { MODE: mode, CURRENT_FIELD: 'artist', FORM_FIELDS: formFields, KEYS: Array.from(keys.entries())},
+  taGetDevice(formFields:taFieldsForm , keys:Map<string,typeaheadKeys>, mode:string):Observable<any>  {
+    console.log( taFieldsForm)
+    console.log( "taGetDevice: RestServer="+this.config.RestServer + '/taGetDevice')
+    return this.http.post<any>(this.RESTRoot + '/taGetDevice',
+            { MODE: mode, CURRENT_FIELD: 'DEVICE_ID', FORM_FIELDS: formFields, KEYS: Array.from(keys.entries())},
             { headers: this.headers});
 
   }
+
+  getDeviceInfo(formFields:taFieldsForm , keys:Map<string,typeaheadKeys>, mode:string):Observable<any>  {
+    //console.log( taFieldsForm)
+    console.log( typeaheadKeys)
+    console.log( "getDeviceInfo: RestServer="+this.config.RestServer + '/getDeviceInfo')
+    return this.http.post<any>(this.RESTRoot + '/getDeviceInfo',
+            { MODE: mode, FORM_FIELDS: formFields, KEYS: Array.from(keys.entries())},
+            { headers: this.headers});
+
+  }
+  
 }

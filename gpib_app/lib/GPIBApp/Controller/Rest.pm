@@ -15,11 +15,31 @@ sub welcome {
   $self->render(msg => 'Welcome to the Mojolicious real-time web framework!');
 }
 
-sub gpibDevices {
+# POST
+sub getDeviceInfo {
+	my $self = shift;
+	my $json = $self->req->body;
+	my $h = decode_json( $json ) ;
+  	$self->app->log->info('Controller::Rest.getDeviceInfo' . Dumper( $h ) ) ;
+	my $gpib = $self->SDCGPIBHLP->{SDCGPIB} ;
+	my $rv = $gpib->getDeviceInfo( { DEVICE_ID => '3456A' } );
+  	$self->app->log->info('getDeviceInfo' . Dumper( $rv ) ) ;
+
+    $self->render(json =>  $rv ) ;
+}
+# POST
+sub taGetDevice {
+	my $self = shift;
 	my $json = $self->req->body;
 	my $h = decode_json( $json ) ;
 
-	my $db = $self->DATABASEHLP->{DATABASE} ;
+  	$self->app->log->info('Controller::Rest.taGetDevice' . Dumper( $h ) ) ;
+	my $gpib = $self->SDCGPIBHLP->{SDCGPIB} ;
+
+	my $rv = $gpib->taGetDevice( { DESCRIPTION => $h->{FORM_FIELDS}->{DEVICE_ID} } );
+  	$self->app->log->info('taGetDevice' . Dumper( $rv ) ) ;
+
+    $self->render(json =>  $rv ) ;
 }
 
 sub version {

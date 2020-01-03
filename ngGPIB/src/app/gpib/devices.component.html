@@ -1,17 +1,115 @@
-<label for="">Device</label>
+<div class="row">
 
-<input [(ngModel)]="taFieldsFormData.gpib_device" 
-    name="gpib_device" id="gpib_device" #gpib_device
-    [ngClass]="inputClass(gpib_device)" (typeaheadNoResults)="typeaheadNoResults('gpib_device', $event)"
-    (typeaheadLoading)="taIsLoading($event)" typeaheadOptionField="DESCRIPTION" [typeaheadScrollable]="true"
-    [ngClass]="gpib_deviceClass()" 
-    [typeahead]="getgpib_device$" 
-    [typeaheadOptionsInScrollableView]="5"
-    [typeaheadWaitMs]="500" (typeaheadOnSelect)="ongpib_deviceSelect($event)" class="form-control">
+    <label for="">Device</label>
 
-<div class="alert alert-danger" *ngIf="mode=='search-music-collection' && taFieldsTAError.get('title')">
+    <input [(ngModel)]="taFieldsFormData.DEVICE_ID" [typeahead]="taGetDevice$" name="DEVICE_ID" id="DEVICE_ID"
+        #DEVICE_ID [ngClass]="inputClass(DEVICE_ID)" (typeaheadNoResults)="typeaheadNoResults('DEVICE_ID', $event)"
+        (typeaheadLoading)="taIsLoading($event)" typeaheadOptionField="DESCRIPTION" [typeaheadScrollable]="true"
+        [ngClass]="gpib_deviceClass()" [typeaheadOptionsInScrollableView]="5" [typeaheadWaitMs]="500"
+        (typeaheadOnSelect)="onSelect($event, DEVICE_ID)" class="form-control">
+
+    <div class="alert alert-danger" *ngIf="mode=='search' && taFieldsTAError.get('title')">
+    </div>
+
+    <div class="alert alert-info" *ngIf="mode=='add' && taFieldsTAError.get('gpib_device')">
+
+        Nieuw
+    </div>
 </div>
 
-<div class="alert alert-info" *ngIf="mode=='add' && taFieldsTAError.get('gpib_device')">
-    Nieuw
+<br>
+<div class="row">
+    <tabset>
+        <tab *ngIf="gpib_device" heading="Device setup ">
+            <table class="table table-striped">
+
+                <caption>GPIB Connection Settings</caption>
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Minor</td>
+                        <td>{{gpib_device.MINOR}}</td>
+                    </tr>
+                    <tr>
+                        <td>Device Id</td>
+                        <td>{{gpib_device.DEVICE_ID}}</td>
+                    </tr>
+                    <tr>
+                        <td>Pad</td>
+                        <td>{{gpib_device.PAD}}</td>
+                    </tr>
+                    <tr>
+                        <td>Sad</td>
+                        <td>{{gpib_device.SAD}}</td>
+                    </tr>
+                    <tr>
+                        <td>Eos</td>
+                        <td>{{gpib_device.EOS_MODE}}</td>
+                    </tr>
+                    <tr>
+                        <td>Timeout</td>
+                        <td>{{gpib_device.TIMEOUT}}</td>
+                    </tr>
+                    <tr>
+
+                        <td>Pad</td>
+                        <td>{{gpib_device.PAD}}</td>
+                    </tr>
+                    <tr>
+                        <td>Send EOI</td>
+                        <td>{{gpib_device.SEND_EOI}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </tab>
+        <tab *ngIf="gpib_device_functions" heading="Device Commands">
+
+            <table class="table table-striped" [mfData]="gpib_device_functions" #mf="mfDataTable" [mfRowsOnPage]="5">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>
+                            <mfDefaultSorter by="COMMAND_GROUP">Cmd Grp</mfDefaultSorter>
+                        </th>
+                        <th>
+                            <mfDefaultSorter by="COMMAND_ID">Cmd Id</mfDefaultSorter>
+                        </th>
+                        <th>
+                            <mfDefaultSorter by="COMMAND_DESCRIPTION">Description</mfDefaultSorter>
+                        </th>
+                        <th>
+                            <mfDefaultSorter by="DEVICE_CODE">Code</mfDefaultSorter>
+                        </th>
+                        
+                    </tr>
+
+
+
+                </thead>
+                <tbody>
+                    <tr *ngFor="let item of mf.data;let i=index">
+                        <td><input type="checkbox" name="chk{{i}}" id="chk{{i}}" value="{{i}}" 
+                            (click)="checkboxSelect(item, i)" (change)='checkboxChange($event, i)'></td>
+                        <td>{{item.COMMAND_GROUP}}</td>
+                        <td>{{item.COMMAND_ID}}</td>
+                        <td>{{item.COMMAND_DESCRIPTION}}</td>
+                        <td>{{item.DEVICE_CODE}}</td>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4">
+                            <mfBootstrapPaginator [rowsOnPageSet]="[5,10,25]"></mfBootstrapPaginator>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+
+        </tab>
+    </tabset>
+
 </div>
