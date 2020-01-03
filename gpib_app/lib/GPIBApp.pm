@@ -38,9 +38,6 @@ sub startup {
                      helper => 'db'
                 });
 
-  my $x = $self->db ;
-  $self->app->log->info( 'plugin database' . Dumper( $x )) ;
-
   my $db = new Database(
                      DBH => $self->db,
                      LOG4DB => 1,
@@ -48,11 +45,17 @@ sub startup {
                      LOG_CLASS => "testDatabase" );
 
   my $gpib = new SDC::GPIB( DATABASE => $db ) ;
-  $self->app->log->info( 'gpib ' . Dumper( $gpib ) ) ;
+  #$self->app->log->info( 'gpib ' . Dumper( $gpib ) ) ;
+
+  my $devices = { };
+  $self->app->helper( DEVICESHLP => sub {
+            return { DEVICES => $devices }
+        }) ;
 
   $self->app->helper( DATABASEHLP => sub {
             return { DATABASE => $db }
         }) ;
+  
   $self->app->helper( SDCGPIBHLP => sub {
             return { SDCGPIB => $gpib }
         }) ;
@@ -68,6 +71,9 @@ sub startup {
   $r->get('/')->to('example#welcome');
   $r->post('/gpib/taGetDevice')->to('Rest#taGetDevice');
   $r->post('/gpib/getDeviceInfo')->to('Rest#getDeviceInfo');
+  $r->post('/gpib/initDevice')->to('Rest#initDevice');
+  $r->post('/gpib/sendToDevice')->to('Rest#sendToDevice');
+  $r->post('/gpib/readFromDevice')->to('Rest#readFromDevice');
 }
 
 1;
