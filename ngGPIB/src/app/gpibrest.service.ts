@@ -47,10 +47,26 @@ export class GpibrestService {
   initDevice( device_id:string ) {
     //console.log( taFieldsForm)
     console.log( "initDevice: RestServer="+this.config.RestServer + '/initDevice')
-    return this.http.post<any>(this.RESTRoot + '/getDeviceInfo',
+    return this.http.post<any>(this.RESTRoot + '/initDevice',
             { DEVICE_ID: device_id },
             { headers: this.headers});
 
   }
   
+  sendToDevice( obj:any ) {
+    //console.log( taFieldsForm)
+    console.log( "sendToDevice: RestServer="+this.config.RestServer + '/sendToDevice', obj)
+    return this.http.post<any>(this.RESTRoot + '/sendToDevice',
+            obj,
+            { headers: this.headers});
+
+  }
+
+  readFromDevice( obj:any) {
+    console.log( "readFromDevice: RestServer="+this.config.RestServer + '/readFromDevice', obj)
+    return this.http.post<any>(this.RESTRoot + '/readFromDevice',
+            obj,
+            { headers: this.headers});
+
+  }
 }

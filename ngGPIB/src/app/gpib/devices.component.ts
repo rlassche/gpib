@@ -28,13 +28,13 @@ export class DevicesComponent implements OnInit {
   }
 
   ngOnInit() {
-    console.log( "ngOnInit")
+    console.log("ngOnInit")
     this.taFieldsFormData.DEVICE_ID = ''
     //console.log( sampleData)
   }
 
   //checkboxSel:boolean[] = new Array(100);
-  checkboxSel:boolean[] = new Array();
+  checkboxSel: boolean[] = new Array();
   // **********************************************************************************************
   // TYPEAHEAD OBSERVABLE: taGetDevices$
   // **********************************************************************************************
@@ -50,8 +50,8 @@ export class DevicesComponent implements OnInit {
       (val: any) => {
         console.log('taGetDevice$: val: ', val.DATA);
         if (val.STATUS == "OK") {
-          let i=0;
-          console.log( val )
+          let i = 0;
+          console.log(val)
           /*
           val.DATA.array.forEach(element => {
             console.log("set to true") ;
@@ -101,7 +101,7 @@ export class DevicesComponent implements OnInit {
 
   public gpib_device: GPIB_DEVICE
   public gpib_device_functions: DEVICE_FUNCTION[]
-  public data_to_send:string = '';
+  public data_to_send: string = '';
 
   onSelect(e: TypeaheadMatch, h: HTMLInputElement) {
     console.log("onSelect: item.ID=***" + e.item.ID + '****', h.name)
@@ -118,35 +118,83 @@ export class DevicesComponent implements OnInit {
       this.rest.getDeviceInfo(this.taFieldsFormData, this.taKeysDict, 'search').subscribe(
         (val) => {
           this.gpib_device = val.GPIB_DEVICE[0];
-          let i=0;
+          let i = 0;
           console.log('onSelect: gpib_device ', this.gpib_device);
           console.log('onSelect: gpib_device.DEVICE_ID ', this.gpib_device.DEVICE_ID);
           this.gpib_device_functions = val.DEVICE_FUNCTION
           this.gpib_device_functions.forEach(element => {
-            console.log("set to false") ;
+            console.log("set to false");
             //this.checkboxSel[i++] = false;
-            this.checkboxSel.push( false ) ;
+            this.checkboxSel.push(false);
           });
           console.log('onSelect: gpib_device.DEVICE_FUNCTION ', this.gpib_device_functions);
         })
     }
 
   }
-  checkboxSelect( item, i ) {
-    console.log( 'checkboxSelect: '+i+', code='+this.gpib_device_functions[i].DEVICE_CODE, item)
+  checkboxSelect(item, i) {
+    console.log('checkboxSelect: ' + i + ', code=' + this.gpib_device_functions[i].DEVICE_CODE, item)
   }
-  checkboxChange( e, i) {
-    console.log( 'checkboxChange', e, i )
-    if( e.target.checked ) {
+  checkboxChange(e, i) {
+    console.log('checkboxChange', e, i)
+    if (e.target.checked) {
       this.data_to_send += this.gpib_device_functions[i].DEVICE_CODE;
-      console.log( "YES, CHECKED, code ==", this.gpib_device_functions[i].DEVICE_CODE, this.data_to_send)
+      console.log("YES, CHECKED, code ==", this.gpib_device_functions[i].DEVICE_CODE, this.data_to_send)
     } else {
-      console.log( "NO, NOT CHECKED")
+      console.log("NO, NOT CHECKED")
 
     }
   }
-  buttonSend( e ) {
-    console.log( "sending to device: "+this.data_to_send)
+
+  isInitialised: boolean = false;
+  initDevice() {
+    console.log("Initialse device: ", this.taKeysDict.get('DEVICE_ID').keyValue)
+    this.rest.initDevice(this.taKeysDict.get('DEVICE_ID').keyValue).subscribe(
+      (val) => {
+        console.log(val)
+        if (val.STATUS == "OK") {
+          this.isInitialised = true;
+        }
+      });
+  }
+  //received: string = '**'
+  sendToDevice(e) {
+    //this.received = ''
+    this.receivedData=''
+    let obj = {
+      DEVICE_ID: this.taKeysDict.get('DEVICE_ID').keyValue,
+      DEVICE_COMMAND: this.data_to_send
+    }
+    console.log("sending to device: " , obj );
+
+    this.rest.sendToDevice(obj).subscribe(
+      (val) => {
+        console.log(val)
+        if (val.STATUS == "OK") {
+          console.log("SEND OK: ", val)
+        } else {
+          //this.received = val.DEBUG;
+        }
+      });
+  }
+  receivedData
+  readFromDevice(e) {
+    let obj = {
+      DEVICE_ID: this.taKeysDict.get('DEVICE_ID').keyValue
+    }
+    console.log( 'readFromDevice:', obj)
+    this.rest.readFromDevice(obj).subscribe(
+      (val) => {
+        console.log(val)
+        if (val.STATUS == "OK") {
+          console.log("READ OK: ", val)
+          this.receivedData = val.DATA;
+        } else {
+          console.log( "READ FAILED")
+          //`this.received = val.DEBUG;
+          this.receivedData = val.DEBUG;
+        }
+      });
   }
 
 }

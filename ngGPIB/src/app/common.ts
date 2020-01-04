@@ -8,7 +8,7 @@ export class taFieldsForm {
 }
 export class typeaheadKeys {
     public keyColumnName: string;     /* like: artist_id */
-    public keyValue: number;          /* like: 1 */
+    public keyValue: any;          /* like: 1 */
     public typeaheadColumnName: string;     /* like: artist */
     public typeaheadValue: string; /* Like: Abba */
     constructor(keyColumnName, keyValue, typeaheadColumnName, typeaheadValue) {

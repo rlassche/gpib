@@ -70,6 +70,8 @@
         <tab *ngIf="gpib_device_functions" heading="Device Commands">
 
             <table class="table table-striped" [mfData]="gpib_device_functions" #mf="mfDataTable" [mfRowsOnPage]="5">
+
+
                 <thead>
                     <tr>
                         <th>Select</th>
@@ -109,11 +111,28 @@
                     </tr>
                 </tfoot>
             </table>
-            <label>Data to send</label>
-            <input type="text" name="send" id="send" class="form-control" value="Send data to device"
-                [(ngModel)]="data_to_send" placeholder="Sample command F1R1M0T4">
-            <button class="btn btn-info" [disabled]="data_to_send.length < 2" (click)="buttonSend($event)">
-                Send to Device </button>
+            <div *ngIf="! isInitialised">
+                <button class="btn btn-info" (click)="initDevice($event)">
+                    Initialise Device </button>
+            </div>
+
+            <div *ngIf="isInitialised">
+                <label>Data to send</label>
+                <input type="text" name="send" id="send" class="form-control" value="Send data to device"
+                    [(ngModel)]="data_to_send" placeholder="Sample command F1R1M0T4">
+                <button class="btn btn-info" [disabled]="data_to_send.length < 1" (click)="sendToDevice($event)">
+                    Send to Device </button>
+
+                    <div>
+
+                <label>Read from device </label>
+                <input type="text" name="read" id="read" class="form-control" value="" [(ngModel)]="receivedData"
+                    placeholder="">
+                <button class="btn btn-info" (click)="readFromDevice($event)">
+                    Read from Device </button>
+                    </div>
+
+            </div>
         </tab>
     </tabset>
 </div>
