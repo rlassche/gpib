@@ -1,3 +1,8 @@
+<div class="row" *ngIf="errorMessage">
+    <div class="alert alert-danger">
+        <strong>{{errorMessage}}</strong> 
+      </div>
+</div>
 <div class="row">
 
     <label for="">Device</label>
@@ -69,7 +74,10 @@
         </tab>
         <tab *ngIf="gpib_device_functions" heading="Device Commands">
 
-            <table class="table table-striped" [mfData]="gpib_device_functions" #mf="mfDataTable" [mfRowsOnPage]="5">
+            <table class="table table-striped" 
+                    [mfData]="gpib_device_functions" 
+                    #mf="mfDataTable" 
+                    [mfRowsOnPage]="5">
 
 
                 <thead>
@@ -95,9 +103,9 @@
                 </thead>
                 <tbody>
                     <tr *ngFor="let item of mf.data;let i=index">
-                        <td><input type="checkbox" name="chk{{i}}" id="chk{{i}}" value="{{i}}"
+                        <td><input type="checkbox" name="chk{{i}}" id="chk{{i}}" #chk value="{{i}}"
                                 [checked]="checkboxSel[i]" (click)="checkboxSelect(item, i)"
-                                (change)='checkboxChange($event, i)'></td>
+                                (change)='checkboxChange($event, item )' ></td>
                         <td>{{item.COMMAND_GROUP}}</td>
                         <td>{{item.COMMAND_ID}}</td>
                         <td>{{item.COMMAND_DESCRIPTION}}</td>

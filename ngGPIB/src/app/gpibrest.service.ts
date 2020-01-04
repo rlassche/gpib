@@ -26,7 +26,7 @@ export class GpibrestService {
   }
 
   taGetDevice(formFields:taFieldsForm , keys:Map<string,typeaheadKeys>, mode:string):Observable<any>  {
-    console.log( taFieldsForm)
+    //console.log( taFieldsForm)
     console.log( "taGetDevice: RestServer="+this.config.RestServer + '/taGetDevice')
     return this.http.post<any>(this.RESTRoot + '/taGetDevice',
             { MODE: mode, CURRENT_FIELD: 'DEVICE_ID', FORM_FIELDS: formFields, KEYS: Array.from(keys.entries())},

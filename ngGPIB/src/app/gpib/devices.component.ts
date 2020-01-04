@@ -69,7 +69,9 @@ export class DevicesComponent implements OnInit {
         }
       },
       (error: HttpErrorResponse) => {
+        console.log('devices.component: error in post')
         this.errorMessage = "getgpib_device$:ERROR:Probleem met de Hypnotoad server!";
+
         throwError('Apache web server is down!');
       }
     );
@@ -135,19 +137,20 @@ export class DevicesComponent implements OnInit {
   checkboxSelect(item, i) {
     console.log('checkboxSelect: ' + i + ', code=' + this.gpib_device_functions[i].DEVICE_CODE, item)
   }
-  checkboxChange(e, i) {
-    console.log('checkboxChange', e, i)
+  checkboxChange(e, item) {
+    this.errorMessage=undefined
+    console.log('checkboxChange', item)
     if (e.target.checked) {
-      this.data_to_send += this.gpib_device_functions[i].DEVICE_CODE;
-      console.log("YES, CHECKED, code ==", this.gpib_device_functions[i].DEVICE_CODE, this.data_to_send)
+      this.data_to_send += item.DEVICE_CODE;
+      console.log("YES, CHECKED, code ==", item.DEVICE_CODE, this.data_to_send)
     } else {
       console.log("NO, NOT CHECKED")
-
     }
   }
 
   isInitialised: boolean = false;
   initDevice() {
+    this.errorMessage=undefined
     console.log("Initialse device: ", this.taKeysDict.get('DEVICE_ID').keyValue)
     this.rest.initDevice(this.taKeysDict.get('DEVICE_ID').keyValue).subscribe(
       (val) => {
@@ -155,17 +158,22 @@ export class DevicesComponent implements OnInit {
         if (val.STATUS == "OK") {
           this.isInitialised = true;
         }
+      },
+      (err: HttpErrorResponse) => {
+        this.errorMessage = err.message
+        console.log("ERROR: ", this.errorMessage)
       });
   }
   //received: string = '**'
   sendToDevice(e) {
+    this.errorMessage=undefined
     //this.received = ''
-    this.receivedData=''
+    this.receivedData = ''
     let obj = {
       DEVICE_ID: this.taKeysDict.get('DEVICE_ID').keyValue,
       DEVICE_COMMAND: this.data_to_send
     }
-    console.log("sending to device: " , obj );
+    console.log("sending to device: ", obj);
 
     this.rest.sendToDevice(obj).subscribe(
       (val) => {
@@ -173,16 +181,21 @@ export class DevicesComponent implements OnInit {
         if (val.STATUS == "OK") {
           console.log("SEND OK: ", val)
         } else {
-          //this.received = val.DEBUG;
+          this.errorMessage = val.DEBUG;
         }
+      },
+      (err: HttpErrorResponse) => {
+        this.errorMessage = err.message
+        console.log("ERROR: ", this.errorMessage)
       });
   }
   receivedData
   readFromDevice(e) {
+    this.errorMessage=undefined
     let obj = {
       DEVICE_ID: this.taKeysDict.get('DEVICE_ID').keyValue
     }
-    console.log( 'readFromDevice:', obj)
+    console.log('readFromDevice:', obj)
     this.rest.readFromDevice(obj).subscribe(
       (val) => {
         console.log(val)
@@ -190,10 +203,15 @@ export class DevicesComponent implements OnInit {
           console.log("READ OK: ", val)
           this.receivedData = val.DATA;
         } else {
-          console.log( "READ FAILED")
+          console.log("READ FAILED")
+          //this.errorMessage = val.DEBUG
           //`this.received = val.DEBUG;
           this.receivedData = val.DEBUG;
         }
+      },
+      (err: HttpErrorResponse) => {
+        this.errorMessage = err.message
+        console.log("ERROR: ", this.errorMessage)
       });
   }
 
