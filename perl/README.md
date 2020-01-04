@@ -1,2 +1,3 @@
-=perl=
-This is the perl package for using GPIB devices.
+# perl
+
+Backend server for the GPIB project.
