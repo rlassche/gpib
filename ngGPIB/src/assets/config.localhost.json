@@ -1,4 +1,4 @@
 {
   "version": 1.0,
-  "RestServer": "http://localhost:3000/gpib"
+  "RestServer": "http://localhost:3001/gpib"
 }
