@@ -149,7 +149,7 @@ export class DevicesComponent implements OnInit {
   }
 
   isInitialised: boolean = false;
-  initDevice() {
+  initDevice(e) {
     this.errorMessage=undefined
     console.log("Initialse device: ", this.taKeysDict.get('DEVICE_ID').keyValue)
     this.rest.initDevice(this.taKeysDict.get('DEVICE_ID').keyValue).subscribe(
