@@ -1,4 +1,4 @@
 {
   "version": 1.0,
-  "RestServer": "https://www.mijn-hobbies.nl:3001/music_collection"
+  "RestServer": "https://www.mijn-hobbies.nl:3001/gpib"
 }
