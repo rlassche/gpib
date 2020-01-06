@@ -21,6 +21,8 @@ use Config::Auto;
 use SDC::GPIB;
 use Redis::Client;
 use Redis::Client::Hash;
+use IO::Select;
+
 
 use Data::Dumper;
 use Test::More tests => 10;
@@ -40,8 +42,8 @@ use Database;
 #    return do { local $/; <$slurpy> };
 #}
 
-my $VERSION="1.0" ;
-my $COMPILE_DATE="02-JAN-2020";
+my $VERSION="1.1" ;
+my $COMPILE_DATE="06-JAN-2020";
 
 my( $config, $config_file) ;
 $config_file = "/usr/lib/cgi-bin/gpib.cfg" ;
@@ -72,21 +74,36 @@ ok( $rv->{STATUS} eq "OK" &&
 	"getDeviceInfo: DEVICE_FUNCTIONs and GPIB_DEVICEsetup" ) ;
 
 $rv = $gpib->initDevice( { DEVICE_ID => $device_id } ) ;
-ok( $rv->{STATUS} eq "OK" && $rv->{DEVICE_FD}, 
+ok( $rv->{STATUS} eq "OK" && $rv->{IBERR} == 0 && $rv->{DEVICE_FD}, 
 			"Init GPIB device $rv->{CONFIG}->{DEVICE_ID} - ".
 			$rv->{CONFIG}->{DESCRIPTION}. 
 			", DEVICE_FD=" . $rv->{DEVICE_FD} );
 my $device_fd = $rv->{DEVICE_FD} ;
 my $command="F1R1M0T4";
 $rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$command } ) ;
-ok( $rv->{STATUS} eq "OK", "Send command: $command" ) ;
+ok( $rv->{STATUS} eq "OK" && $rv->{IBERR} == 0, 
+	"Send command: $command, IBERR==$rv->{IBERR}" ) ;
+
+#my $timeout=10;
+#my $s = IO::Select->new() ;
+#print "FD:  $device_fd\n" ;
+#$s->add( $device_fd ); 
+#my @ready = $s->can_read( $timeout ) ;
+#die Dumper( \@ready ) ;
+#exit;
 $rv = $gpib->read( { DEVICE_FD => $device_fd } ) ;
-ok( $rv->{STATUS} eq "OK", "Read command: $rv->{DATA}" ) ;
+ok( $rv->{STATUS} eq "OK" && $rv->{IBERR} == 0,
+	 "Read command: $rv->{DATA}, IBERR=$rv->{IBERR}" ) ;
 $command="ENTER;A";
 $rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$command } ) ;
-ok( $rv->{STATUS} eq "OK", "Send command: $command" ) ;
+ok( $rv->{STATUS} eq "OK" && $rv->{IBERR} == 0 , 
+	"Send command: $command, IBERR=$rv->{IBERR}" ) ;
 $rv = $gpib->read( { DEVICE_FD => $device_fd } ) ;
-ok( $rv->{STATUS} eq "OK", "Read command: $rv->{DATA}" ) ;
+ok( $rv->{STATUS} eq "OK" && $rv->{IBERR} == 0, 
+	"Read command: $rv->{DATA}, $rv->{IBERR}" ) ;
 #die Dumper( $rv ) ;
+$rv = $gpib->gpib_error_string( { IBERR => 14 } ) ;
+ok( $rv->{STATUS} eq "OK" && $rv->{IBERR_DESCRIPTION} =~/EBUS/, 
+		"IBERR 14 text string -> $rv->{IBERR_DESCRIPTION}"  );
 
 1;

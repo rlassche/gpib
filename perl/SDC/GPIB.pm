@@ -1,4 +1,29 @@
 #!perl
+#######################################################################
+#
+# TODO: timeout:
+# printf( "enter the desired timeout:\n"
+#        "\t(0) none\n"
+#        "\t(1) 10 microsec\n"
+#        "\t(2) 30 microsec\n"
+#        "\t(3) 100 microsec\n"
+#        "\t(4) 300 microsec\n"
+#        "\t(5) 1 millisec\n"
+#        "\t(6) 3 millisec\n"
+#        "\t(7) 10 millisec\n"
+#        "\t(8) 30 millisec\n"
+#        "\t(9) 100 millisec\n"
+#        "\t(10) 300 millisec\n"
+#        "\t(11) 1 sec\n"
+#        "\t(12) 3 sec\n"
+#        "\t(13) 10 sec\n"
+#        "\t(14) 30 sec\n"
+#        "\t(15) 100 sec\n"
+#        "\t(16) 300 sec\n"
+#        "\t(17) 1000 sec\n"
+#        );
+#        if( ibtmo( ud, timeout ) & ERR )
+#######################################################################
 package SDC::GPIB;
 use Moose;
 use LinuxGpib;
@@ -16,8 +41,8 @@ use MIME::Base64 qw( encode_base64 );
 
 has 'DATABASE'     => ( is => 'rw', isa => 'Database', lazy_build => 1 );
 
-my $VERSION      = "1.0";
-my $COMPILE_DATE = "02-JAN-2020";
+my $VERSION      = "1.1";
+my $COMPILE_DATE = "06-JAN-2020";
 
 # Binary: 1000000000000000
 # Hex   : 0x8000
@@ -48,6 +73,8 @@ sub initDevice {
 			) ;
 	}
 	return {STATUS => $rv->{STATUS}, 
+			TRHREADIBSTA => LinuxGpib::ThreadIbsta(),
+			IBERR => LinuxGpib::ThreadIberr(),
 			DEVICE_FD => $dev } ;
 }
 sub send {
@@ -63,8 +90,18 @@ sub send {
     # ERR binary:  1000000000000000
     $status = "OK" if( $rv & $ERR) == 0 ;
 
-	return { STATUS =>"$status", RETVAL => $rv & $ERR };
+	return { STATUS =>"$status", 
+			 IBERR => LinuxGpib::ThreadIberr(),
+			 TRHREADIBSTA => LinuxGpib::ThreadIbsta(),
+			 RETVAL => $rv & $ERR };
 }
+
+# TODO:
+# if((ThreadIbsta() & ERR) == 0 || ThreadIberr() != EDVR)
+#  read_count = ThreadIbcntl();
+
+
+#
 sub read {
     my $self = shift;
     my $params = shift;
@@ -77,10 +114,23 @@ sub read {
     if( ($rv & $ERR) == 0 ) {
 		$buffer =~ s/\r|\n//g;
 		$status = "OK";
-	}
+	} 
 	return { STATUS =>"$status", RETVAL => $rv & $ERR,
+			 IBERR => LinuxGpib::ThreadIberr(),
+			 TRHREADIBSTA => LinuxGpib::ThreadIbsta(),
 			 DATA => $buffer };
 }
+
+sub gpib_error_string {
+    my $self = shift;
+    my $params = shift;
+	return { STATUS => "OK", 
+			 IBERR => $params->{IBERR},
+			 IBERR_DESCRIPTION => 
+					LinuxGpib::gpib_error_string( $params->{IBERR} ) 
+		   }
+}
+
 sub version {
     my $self = shift;
     return {
