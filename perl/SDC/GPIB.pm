@@ -41,8 +41,8 @@ use MIME::Base64 qw( encode_base64 );
 
 has 'DATABASE'     => ( is => 'rw', isa => 'Database', lazy_build => 1 );
 
-my $VERSION      = "1.1";
-my $COMPILE_DATE = "06-JAN-2020";
+my $VERSION      = "1.2";
+my $COMPILE_DATE = "08-JAN-2020";
 
 # Binary: 1000000000000000
 # Hex   : 0x8000
@@ -141,6 +141,17 @@ sub version {
 }
 
 
+sub documentation {
+    my $self   = shift;
+    my $params = shift;
+
+	my @VALUES;
+	my $sql = "SELECT * FROM DEVICE_DOCUMENTATION WHERE DEVICE_ID = ?";
+	push( @VALUES, $params->{DEVICE_ID} ) ;
+    my $rv = $self->{DATABASE}->executeSelect( { SQL => $sql, VALUES=>\@VALUES } ) ;
+
+	return $rv ;
+}
 #################################################################
 # Description:
 # 	typeahead get device

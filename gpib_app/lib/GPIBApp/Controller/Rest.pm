@@ -16,6 +16,24 @@ sub welcome {
   # Render template "example/welcome.html.ep" with message
   $self->render(msg => 'Welcome to the Mojolicious real-time web framework!');
 }
+sub documentation {
+    my $self = shift;
+
+    my( $rv, $debug ) ;
+
+    my $status ;
+	my $debug='';
+    my $json = $self->req->body;
+    my $h = decode_json( $json ) ;
+
+    my $gpib = $self->SDCGPIBHLP->{SDCGPIB} ;
+	my $rv = $gpib->documentation( { DEVICE_ID => $h->{DEVICE_ID} }) ;
+	$status = $rv->{STATUS};
+
+	$debug .= Dumper( $rv ) ;
+
+    $self->render(json =>  $rv );
+}
 
 sub readFromDevice {
     my $self = shift;

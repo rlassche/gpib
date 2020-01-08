@@ -42,8 +42,8 @@ use Database;
 #    return do { local $/; <$slurpy> };
 #}
 
-my $VERSION="1.1" ;
-my $COMPILE_DATE="06-JAN-2020";
+my $VERSION="1.2" ;
+my $COMPILE_DATE="08-JAN-2020";
 
 my( $config, $config_file) ;
 $config_file = "/usr/lib/cgi-bin/gpib.cfg" ;
@@ -106,4 +106,6 @@ $rv = $gpib->gpib_error_string( { IBERR => 14 } ) ;
 ok( $rv->{STATUS} eq "OK" && $rv->{IBERR_DESCRIPTION} =~/EBUS/, 
 		"IBERR 14 text string -> $rv->{IBERR_DESCRIPTION}"  );
 
+$rv = $gpib->documentation( { DEVICE_ID => $device_id } ) ;
+ok( $rv->{STATUS} eq "OK" && defined $rv->{DATA}, "documentation for $device_id" ); 
 1;
