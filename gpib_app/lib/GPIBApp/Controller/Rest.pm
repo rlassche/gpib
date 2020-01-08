@@ -46,6 +46,7 @@ sub readFromDevice {
     $self->render(json =>  {
                     STATUS=>"$status",
                     DEBUG=> $debug,
+					IBERR => $rv->{IBERR},
                     DEVICE_FD=> $device_fd,
                     DEVICE_ID=> $h->{DEVICE_ID},
 					RETVAL => $rv->{RETVAL},
@@ -65,10 +66,10 @@ sub sendToDevice {
 	my $status="OK";
 	my $json = $self->req->body;
 	my $h = decode_json( $json ) ;
-  	$self->app->log->info('Controller::Rest.sendToDevice' . $json ) ;
 	
   	my $devices = $self->DEVICESHLP->{DEVICES} ;
 	my $device_fd = $devices->{$h->{DEVICE_ID}}->{DEVICE_FD} ;
+  	$self->app->log->info('Controller::Rest.sendToDevice. FD=$device_fd: json=' . $json ) ;
 	if( ! $device_fd ) {
 		$status = 'ERROR' ;
 		$debug = "DEVICE_ID $h->{DEVICE_ID} has not DEVICE_FD. Connection is closed";
@@ -80,15 +81,16 @@ sub sendToDevice {
 		}) ;
 		$status = $rv->{STATUS};
 		if( $rv->{STATUS} eq "OK" ) {
-			$debug = "Command send to device" ;
+			$debug = "Command send to device: DEVICE_FD=" . $device_fd ;
 		} else {
-			$debug = "gpib->send failed!" ;
+			$debug = "gpib->send failed for DEVICE_FD=" . $device_fd ;
 		}
 	}
 
     $self->render(json =>  {
 					STATUS=>"$status",
 					DEBUG=> $debug,
+					IBERR => $rv->{IBERR},
 					DEVICE_FD=> $device_fd,
 					DEVICE_ID=> $h->{DEVICE_ID},
 	});
@@ -108,13 +110,16 @@ sub initDevice {
 	my $gpib = $self->SDCGPIBHLP->{SDCGPIB} ;
 	if( ! $devices->{$h->{DEVICE_ID}}->{DEVICE_FD} ) {
 		$debug ="Device is NOT open.";
-		$rv = $gpib->initDevice( { DEVICE_ID => '3456A' } );
+		$rv = $gpib->initDevice( { DEVICE_ID => $h->{DEVICE_ID} } );
   		$self->app->log->info('after initDevice' . Dumper( $rv ) ) ;
 		if( $rv->{STATUS} eq "OK" ) {
 			$status="OK";
-			$debug ="Device is opened.";
+			$debug ="Device ID " . $h->{DEVICE_ID} . " is opened with DEVICE_FD=" .
+					$rv->{DEVICE_FD} ;
 			$devices->{$h->{DEVICE_ID}}->{DEVICE_FD} = $rv->{DEVICE_FD} ;
-  			$self->app->log->info('initDevice:devices is not:' . Dumper( $devices ) ) ;
+  			$self->app->log->info('initDevice:devices: All registered devices: ' . Dumper( $devices ) ) ;
+		} else {
+  			$self->app->log->info('STATUS != "OK"' . Dumper( $rv ) ) ;
 		}
 		#$rv->{DEVICES}=$devices;
 	} else {

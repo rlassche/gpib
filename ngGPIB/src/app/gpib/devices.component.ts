@@ -130,6 +130,7 @@ export class DevicesComponent implements OnInit {
             this.checkboxSel.push(false);
           });
           console.log('onSelect: gpib_device.DEVICE_FUNCTION ', this.gpib_device_functions);
+          this.initDevice(e);
         })
     }
 
@@ -199,8 +200,8 @@ export class DevicesComponent implements OnInit {
     this.rest.readFromDevice(obj).subscribe(
       (val) => {
         console.log(val)
-        if (val.STATUS == "OK") {
-          console.log("READ OK: ", val)
+        if ( (val.STATUS == "OK") || (val.STATUS == "ERROR" && val.IBERR == 6 )) {
+          console.log("READ " + val.STATUS + ": ", val)
           this.receivedData = val.DATA;
         } else {
           console.log("READ FAILED")
@@ -214,5 +215,6 @@ export class DevicesComponent implements OnInit {
         console.log("ERROR: ", this.errorMessage)
       });
   }
+  public hasDocumentation:boolean = false
 
 }
