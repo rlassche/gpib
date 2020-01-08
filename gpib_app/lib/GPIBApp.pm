@@ -74,6 +74,7 @@ sub startup {
   $r->post('/gpib/initDevice')->to('Rest#initDevice');
   $r->post('/gpib/sendToDevice')->to('Rest#sendToDevice');
   $r->post('/gpib/readFromDevice')->to('Rest#readFromDevice');
+  $r->post('/gpib/documentation')->to('Rest#documentation');
 }
 
 1;

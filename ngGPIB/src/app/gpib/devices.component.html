@@ -1,7 +1,7 @@
 <div class="row" *ngIf="errorMessage">
     <div class="alert alert-danger">
-        <strong>{{errorMessage}}</strong> 
-      </div>
+        <strong>{{errorMessage}}</strong>
+    </div>
 </div>
 <div class="row">
 
@@ -74,10 +74,7 @@
         </tab>
         <tab *ngIf="gpib_device_functions" heading="Device Commands">
 
-            <table class="table table-striped" 
-                    [mfData]="gpib_device_functions" 
-                    #mf="mfDataTable" 
-                    [mfRowsOnPage]="5">
+            <table class="table table-striped" [mfData]="gpib_device_functions" #mf="mfDataTable" [mfRowsOnPage]="5">
 
 
                 <thead>
@@ -105,7 +102,7 @@
                     <tr *ngFor="let item of mf.data;let i=index">
                         <td><input type="checkbox" name="chk{{i}}" id="chk{{i}}" #chk value="{{i}}"
                                 [checked]="checkboxSel[i]" (click)="checkboxSelect(item, i)"
-                                (change)='checkboxChange($event, item )' ></td>
+                                (change)='checkboxChange($event, item )'></td>
                         <td>{{item.COMMAND_GROUP}}</td>
                         <td>{{item.COMMAND_ID}}</td>
                         <td>{{item.COMMAND_DESCRIPTION}}</td>
@@ -131,16 +128,33 @@
                 <button class="btn btn-info" [disabled]="data_to_send.length < 1" (click)="sendToDevice($event)">
                     Send to Device </button>
 
-                    <div>
+                <div>
 
-                <label>Read from device </label>
-                <input type="text" name="read" id="read" class="form-control" value="" [(ngModel)]="receivedData"
-                    placeholder="">
-                <button class="btn btn-info" (click)="readFromDevice($event)">
-                    Read from Device </button>
-                    </div>
+                    <label>Read from device </label>
+                    <input type="text" name="read" id="read" class="form-control" value="" [(ngModel)]="receivedData"
+                        placeholder="">
+                    <button class="btn btn-info" (click)="readFromDevice($event)">
+                        Read from Device </button>
+                </div>
 
             </div>
+        </tab>
+        <tab *ngIf="documentation?.length > 0" heading="Documentation">
+
+            <div *ngFor="let d of documentation;let i=index">
+                <img *ngIf="d.DOCUMENTATION_TYPE=='IMAGE'" alt="{{d.DOCUMENTATION_DESCRIPTION}}" 
+                        src="{{d.URL}}" height="200" width="400">
+            </div>
+
+            <div>
+
+            <ul *ngFor="let d of documentation;let i=index">
+                    <li *ngIf="d.DOCUMENTATION_TYPE != 'IMAGE'">
+                        <a href="{{d.URL}}" target="download">{{d.DOCUMENTATION_DESCRIPTION}}</a>
+                    </li>
+            </ul>
+            </div>
+
         </tab>
     </tabset>
 </div>

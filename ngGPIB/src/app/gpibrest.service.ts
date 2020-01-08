@@ -34,6 +34,15 @@ export class GpibrestService {
 
   }
 
+
+  documentation( device_id:string):Observable<any>  {
+    console.log( "documentation: RestServer="+this.config.RestServer + '/documentation, device_id=' + device_id)
+    return this.http.post<any>(this.RESTRoot + '/documentation',
+            { DEVICE_ID: device_id },
+            { headers: this.headers});
+
+  }
+
   getDeviceInfo(formFields:taFieldsForm , keys:Map<string,typeaheadKeys>, mode:string):Observable<any>  {
     //console.log( taFieldsForm)
     console.log( typeaheadKeys)

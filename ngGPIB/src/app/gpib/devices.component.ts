@@ -106,6 +106,7 @@ export class DevicesComponent implements OnInit {
   public data_to_send: string = '';
 
   onSelect(e: TypeaheadMatch, h: HTMLInputElement) {
+    this.documentation=undefined
     console.log("onSelect: item.ID=***" + e.item.ID + '****', h.name)
     console.log(h)
     this.taKeysDict.set(h.name,
@@ -130,7 +131,16 @@ export class DevicesComponent implements OnInit {
             this.checkboxSel.push(false);
           });
           console.log('onSelect: gpib_device.DEVICE_FUNCTION ', this.gpib_device_functions);
+          this.initDevice(e);
+
         })
+      console.log( 'GETTING DOCUMENTATINO: ', e.item)
+      this.rest.documentation(e.item.ID).subscribe(
+        (val) => {
+          this.documentation = val.DATA;
+          console.log('documentation', this.documentation)
+        });
+
     }
 
   }
@@ -138,7 +148,7 @@ export class DevicesComponent implements OnInit {
     console.log('checkboxSelect: ' + i + ', code=' + this.gpib_device_functions[i].DEVICE_CODE, item)
   }
   checkboxChange(e, item) {
-    this.errorMessage=undefined
+    this.errorMessage = undefined
     console.log('checkboxChange', item)
     if (e.target.checked) {
       this.data_to_send += item.DEVICE_CODE;
@@ -150,7 +160,7 @@ export class DevicesComponent implements OnInit {
 
   isInitialised: boolean = false;
   initDevice(e) {
-    this.errorMessage=undefined
+    this.errorMessage = undefined
     console.log("Initialse device: ", this.taKeysDict.get('DEVICE_ID').keyValue)
     this.rest.initDevice(this.taKeysDict.get('DEVICE_ID').keyValue).subscribe(
       (val) => {
@@ -166,7 +176,7 @@ export class DevicesComponent implements OnInit {
   }
   //received: string = '**'
   sendToDevice(e) {
-    this.errorMessage=undefined
+    this.errorMessage = undefined
     //this.received = ''
     this.receivedData = ''
     let obj = {
@@ -191,7 +201,7 @@ export class DevicesComponent implements OnInit {
   }
   receivedData
   readFromDevice(e) {
-    this.errorMessage=undefined
+    this.errorMessage = undefined
     let obj = {
       DEVICE_ID: this.taKeysDict.get('DEVICE_ID').keyValue
     }
@@ -199,8 +209,8 @@ export class DevicesComponent implements OnInit {
     this.rest.readFromDevice(obj).subscribe(
       (val) => {
         console.log(val)
-        if (val.STATUS == "OK") {
-          console.log("READ OK: ", val)
+        if ((val.STATUS == "OK") || (val.STATUS == "ERROR" && val.IBERR == 6)) {
+          console.log("READ " + val.STATUS + ": ", val)
           this.receivedData = val.DATA;
         } else {
           console.log("READ FAILED")
@@ -214,5 +224,7 @@ export class DevicesComponent implements OnInit {
         console.log("ERROR: ", this.errorMessage)
       });
   }
+  public hasDocumentation: boolean = false
+  public documentation:[];
 
 }
