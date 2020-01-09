@@ -27,7 +27,7 @@ sub documentation {
     my $h = decode_json( $json ) ;
 
     my $gpib = $self->SDCGPIBHLP->{SDCGPIB} ;
-	my $rv = $gpib->documentation( { DEVICE_ID => $h->{DEVICE_ID} }) ;
+	$rv = $gpib->documentation( { DEVICE_ID => $h->{DEVICE_ID} }) ;
 	$status = $rv->{STATUS};
 
 	$debug .= Dumper( $rv ) ;

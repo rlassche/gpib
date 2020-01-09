@@ -78,12 +78,18 @@ ok( $rv->{STATUS} eq "OK" && $rv->{IBERR} == 0 && $rv->{DEVICE_FD},
 			"Init GPIB device $rv->{CONFIG}->{DEVICE_ID} - ".
 			$rv->{CONFIG}->{DESCRIPTION}. 
 			", DEVICE_FD=" . $rv->{DEVICE_FD} );
-
 my $device_fd = $rv->{DEVICE_FD} ;
+
+#$rv = $gpib->printConfig( { DEVICE_FD=> $device_fd } ) ;
+#die Dumper( $rv ) ;
+my $command="Q7";
+$rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$command } ) ;
+ok( $rv->{STATUS} eq "OK" && $rv->{IBERR_DESCRIPTION} eq "" , 
+	"Send command: $command CMPL" ) ;
 my $command="RGS";
 $rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$command } ) ;
-ok( $rv->{STATUS} eq "OK" && $rv->{IBERR} == 0, 
-	"Send command: $command, IBERR==$rv->{IBERR}" ) ;
+ok( $rv->{STATUS} eq "OK" && $rv->{IBERR_DESCRIPTION} eq "" , 
+	"Send command: $command CMPL" ) ;
 
 #my $timeout=10;
 #my $s = IO::Select->new() ;
@@ -95,14 +101,33 @@ ok( $rv->{STATUS} eq "OK" && $rv->{IBERR} == 0,
 #############################################################
 # IBERR==6: Timeout
 #############################################################
-$rv = $gpib->read( { DEVICE_FD => $device_fd } ) ;
-ok( ($rv->{STATUS} eq "OK" && $rv->{IBERR} == 0 ) ||
-    ($rv->{STATUS} eq "ERROR" && $rv->{IBERR} == 6),
-	 "Read result with  IBERR=$rv->{IBERR}" ) ;
+#
+#
+# SRS3 = Store display resolution 3: gate time=1ms, number of digits=3
+my $command="SRS3";
+$command="SRS6";
+$rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$command } ) ;
+ok( $rv->{STATUS} eq "OK" && $rv->{IBERR_DESCRIPTION} eq "" , 
+	"Send command: $command CMPL" ) ;
+#die Dumper( $rv ) ;
+my $i=0;
+while( $i++<10 ) {
+	$rv = $gpib->read( { DEVICE_FD => $device_fd } ) ;
+	#print "##### $i #####\n". Dumper( $rv ) ;
+	print "##### $i #####". $rv->{DATA} . "\n" ;
+	$error++ if( $rv->{ERROR} );
+#ok( ($rv->{STATUS} eq "OK" && $rv->{IBERR} == 0 ) ||
+#    ($rv->{STATUS} eq "ERROR" && $rv->{IBERR} == 6),
+#	 "Read result with  IBERR=$rv->{IBERR_DESCRIPTION}" ) ;
+}
+ok( $error ==  0, "10 read tests, 0 errors" ) ;
 
-$rv = $gpib->gpib_error_string( { IBERR => $rv->{IBERR} } ) ;
+exit;
+
+$rv = $gpib->gpib_error_string( { IBERR => 6 } ) ;
 ok( $rv->{IBERR_DESCRIPTION} =~ /EABO 6/, "IBERR text: $rv->{IBERR_DESCRIPTION}" ) ;
-$command="T0";
+
+$command="T2";
 $rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$command } ) ;
 ok( $rv->{STATUS} eq "OK" && $rv->{IBERR} == 0 , 
 	"Send command: $command, IBERR=$rv->{IBERR}" ) ;
@@ -110,5 +135,9 @@ $rv = $gpib->read( { DEVICE_FD => $device_fd } ) ;
 ok( ($rv->{STATUS} eq "OK" && $rv->{IBERR} == 0) ||
 	($rv->{STATUS} eq "ERROR" && $rv->{IBERR} == 6), 
 	"Read with IBBERR  $rv->{IBERR}" ) ;
+print "read 1: " . Dumper( $rv ) ;
+
+$rv = $gpib->read( { DEVICE_FD => $device_fd } ) ;
+print "read 2: " . Dumper( $rv ) ;
 
 1;

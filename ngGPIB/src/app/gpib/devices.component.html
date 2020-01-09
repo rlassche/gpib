@@ -11,7 +11,7 @@
         #DEVICE_ID [ngClass]="inputClass(DEVICE_ID)" (typeaheadNoResults)="typeaheadNoResults('DEVICE_ID', $event)"
         (typeaheadLoading)="taIsLoading($event)" typeaheadOptionField="DESCRIPTION" [typeaheadScrollable]="true"
         [ngClass]="gpib_deviceClass()" [typeaheadOptionsInScrollableView]="5" [typeaheadWaitMs]="500"
-        (typeaheadOnSelect)="onSelect($event, DEVICE_ID)" class="form-control">
+        (typeaheadOnSelect)="onSelect($event, DEVICE_ID)" class="form-control" autocomplete=“off”>
 
     <div class="alert alert-danger" *ngIf="mode=='search' && taFieldsTAError.get('title')">
     </div>
@@ -25,7 +25,7 @@
 <br>
 <div class="row">
     <tabset>
-        <tab *ngIf="gpib_device" heading="Device setup ">
+        <tab *ngIf="gpib_device" heading="Setup ">
             <table class="table table-striped">
 
                 <caption>GPIB Connection Settings</caption>
@@ -72,7 +72,7 @@
                 </tbody>
             </table>
         </tab>
-        <tab *ngIf="gpib_device_functions" heading="Device Commands">
+        <tab *ngIf="gpib_device_functions" heading="Commands">
 
             <table class="table table-striped" [mfData]="gpib_device_functions" #mf="mfDataTable" [mfRowsOnPage]="5">
 
@@ -125,7 +125,7 @@
                 <label>Data to send</label>
                 <input type="text" name="send" id="send" class="form-control" value="Send data to device"
                     [(ngModel)]="data_to_send" placeholder="Sample command F1R1M0T4">
-                <button class="btn btn-info" [disabled]="data_to_send.length < 1" (click)="sendToDevice($event)">
+                <button class="btn btn-info" [disabled]="data_to_send.length < 1 || commandInProgress" (click)="sendToDevice($event)">
                     Send to Device </button>
 
                 <div>
