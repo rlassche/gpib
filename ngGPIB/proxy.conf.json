@@ -1,0 +1,17 @@
+{
+  "/images/*": {
+    "target": "https://hp-probook",
+    "secure": false,
+    "logLevel": "debug",
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/images": "https://hp-probook/images"
+    }
+  },
+  "/docs/*": {
+    "target": "https://hp-probook",
+    "secure": false,
+    "logLevel": "debug",
+    "changeOrigin": true
+    }
+}

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --host hp-probook --proxy-config proxy.conf.json --ssl true --ssl-cert /etc/ssl/certs/hp-probook.cert.pem --ssl-key /etc/ssl/private/hp-probook.key.pem",
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",
