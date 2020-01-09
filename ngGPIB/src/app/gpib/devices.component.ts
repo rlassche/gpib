@@ -174,9 +174,10 @@ export class DevicesComponent implements OnInit {
         console.log("ERROR: ", this.errorMessage)
       });
   }
-  //received: string = '**'
+  commandInProgress:boolean = false; 
   sendToDevice(e) {
     this.errorMessage = undefined
+    this.commandInProgress = true;
     //this.received = ''
     this.receivedData = ''
     let obj = {
@@ -201,6 +202,7 @@ export class DevicesComponent implements OnInit {
   }
   receivedData
   readFromDevice(e) {
+    this.receivedData=undefined
     this.errorMessage = undefined
     let obj = {
       DEVICE_ID: this.taKeysDict.get('DEVICE_ID').keyValue
@@ -218,10 +220,12 @@ export class DevicesComponent implements OnInit {
           //`this.received = val.DEBUG;
           this.receivedData = val.DEBUG;
         }
+        this.commandInProgress = false;
       },
       (err: HttpErrorResponse) => {
         this.errorMessage = err.message
         console.log("ERROR: ", this.errorMessage)
+        this.commandInProgress = false;
       });
   }
   public hasDocumentation: boolean = false

@@ -125,7 +125,7 @@
                 <label>Data to send</label>
                 <input type="text" name="send" id="send" class="form-control" value="Send data to device"
                     [(ngModel)]="data_to_send" placeholder="Sample command F1R1M0T4">
-                <button class="btn btn-info" [disabled]="data_to_send.length < 1" (click)="sendToDevice($event)">
+                <button class="btn btn-info" [disabled]="data_to_send.length < 1 || commandInProgress" (click)="sendToDevice($event)">
                     Send to Device </button>
 
                 <div>
