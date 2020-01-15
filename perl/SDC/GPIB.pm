@@ -475,7 +475,7 @@ sub read {
     my $params = shift;
 
 	my $buffer ;
-	my $len = 1; # SAVE
+	my $len = 10; # SAVE
 	my $status = "OK" ;
 	my $iberr="";
 	my $debug="";
@@ -484,35 +484,94 @@ sub read {
 
 	my $collect="";
 	my $cnt;
-	while( ($rv=LinuxGpib::ibrd( $params->{DEVICE_FD}, $buffer, $len )) != 0 )
-	{
+	my $rest="";
+	my @a;
+	my $tot=0;
+	#while( ($rv=LinuxGpib::ibrd( $params->{DEVICE_FD}, $buffer, $len )) != 0 )
+	#{
+	$rv=LinuxGpib::ibrd( $params->{DEVICE_FD}, $buffer, $len );
 			$cnt = LinuxGpib::ThreadIbcnt();
 			if( (LinuxGpib::ThreadIbsta() & ERR) == ERR ) {
 				$debug .=sprintf( "ERROR on ibrd: ibsta == ERR, buffer: %s, cnt == %d, ibrd retval 0x%X", $buffer, $cnt, $rv ) ;
-				if( $collect ne "" ) {
-						die "VREEMD: ERROR MAAR TIJDENS HET LEZEN:  $debug, collect==>$collect<===" ;
-				}
-				last;
+				print "$debug";
+				exit;
+				#if( $collect ne "" ) {
+				#		die "VREEMD: ERROR MAAR TIJDENS HET LEZEN:  $debug, collect==>$collect<===" ;
+				#}
+				#last;
 			}
-			$hstring = unpack ("H*",$buffer);
-			#$debug .= ", hstring=$hstring" ;
-			if( $hstring =~ /0a/ ) {
-				$debug .= ", JA, 0a EINDE! COLLECT=$collect";
-				$status = "OK" ;
-				last;
+			#print "TEST 0a: CNT=$cnt (max read len: $len):>>$buffer<<\n";
+			if( defined $self->{REST} ) {
+				#print "PREFIX REST >>$self->{REST}<< + BUFFER >>$buffer<< \n" ;
+				#	
+				my $len1 = length( $self->{REST} ) ;
+				my $len2 = length( $buffer ) ;
+				$tot = $len1 + $len2 ;
+				#print "ADD BUFFER $len2 TO REST $len1. TOTAL = $tot\n";
+				$buffer = $self->{REST} . $buffer ;
+				#print "\t====>$buffer<==\n" ;
+				# REST is used, so clear it
+			} 
+			$self->{REST} = "";
+
+			#my $tot = length( $self->{REST} ) + $cnt;
+			#print "BUFLEN: $tot\nBUFFER:>>$buffer<<\n"; 
+			# Get lastbytes first
+			my $last2bytes=substr( $buffer, -2 ) ;
+			
+			# Now split
+			# 	
+			if( $buffer =~ /\r\n/ ) {
+				@a = split( /\r\n/, $buffer ) ;
+				#print "SPLITTING buffer >>$buffer<<\n". Dumper( \@a ) ;; 
+				#die "STOP" ;
 			} else {
-				if( "$hstring" !~ /0d/ ) {
-					#print "ADD $hstring\n" ;
-					$collect .= $buffer ;
-				} else {
-					$debug .= ", JA HOOR, EEN 0d, NU NOG 1 LEZEN";
-					# Wanneer len <> 1 is, dan nu wel op 1 zetten, want er komt nog maar 1 byte
-					$len=1;
-				}
+				@a =() ;
 			}
-			#print "BUFFER: **$buffer** -->". $hstring . "<--- ThreadIbcnt:" . LinuxGpib::ThreadIbcnt() . "\n";
-	}
-	$debug .= ", EXIT FROM LOOP " ;
+
+			if( $last2bytes ne "\r\n" ) {
+				#print "NO CRLF AT END OF THE STRING: $last2bytes\n" ; 
+				# Last value is not complete yet!
+				#
+				#
+				#		
+				if( @a > 0 ) {
+					#print "DO the POP: a:" . Dumper( \@a ) ;
+					my $p= pop( @a ) ;
+					if( defined $p ) {
+						$self->{REST} = $p;
+						#print "NEW REST=: $self->{REST}. NEW REST LENGTH:".
+								length( $p ) . "\n"  ;
+					}
+				} else {
+					$self->{REST} = $buffer ;
+				}
+			} else {
+				#print "CRLF AT THE END!!! KEURIG EINDE\n" ;
+			}
+#print "TEST 1. AANTAL: " . @a . ", a=" .Dumper( \@a ) . "BUFFER: $buffer\n";
+			#print "CNT=$cnt, rest=$rest\n". Dumper( \@a ) ; ;
+#print "TEST 1. AANTAL: " . @a . ", a=" .Dumper( \@a ) ;
+			
+			#$hstring = unpack ("H*",$buffer);
+			##$debug .= ", hstring=$hstring" ;
+			#if( $hstring =~ /0a/ ) {
+			#	$debug .= ", JA, 0a EINDE! COLLECT=$collect";
+			#	$status = "OK" ;
+			#	last;
+			#} else {
+			#	if( "$hstring" !~ /0d/ ) {
+			#		#print "ADD $hstring\n" ;
+			#		$collect .= $buffer ;
+			#	} else {
+			#		$debug .= ", JA HOOR, EEN 0d, NU NOG 1 LEZEN";
+			#		# Wanneer len <> 1 is, dan nu wel op 1 zetten, want er komt nog maar 1 byte
+			#		$len=1;
+			#	}
+			#}
+			##print "BUFFER: **$buffer** -->". $hstring . "<--- ThreadIbcnt:" . LinuxGpib::ThreadIbcnt() . "\n";
+	#}
+	#print " EXIT FROM LOOP " ;
 	#print "************ $collect ***********";
 
 	#my $rv=LinuxGpib::ibrd( $params->{DEVICE_FD}, $buffer, $len ) ;
@@ -531,12 +590,18 @@ sub read {
 	#	#$buffer =~ s/\r|\n//g;
 	#	$status = "OK";
 	#}
+	#
+	#
+	if( @a == 0 ) {
+		$status = "NOT COMPLETED" ;
+	}
+	#print "driver: STATUS: $status, AANTAL VALUES: ". @a . "\n" ;
 	return { STATUS =>"$status",
 			 THREADIBERR => sprintf( "0x%X 0%O %d", LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr()),
 			 IBERR_DESCRIPTION => $iberr,
 			 TRHREADIBSTA => sprintf( "0x%X 0%O %d", LinuxGpib::ThreadIbsta(), LinuxGpib::ThreadIbsta(), LinuxGpib::ThreadIbsta()),
 			 DEBUG=> $debug,
-			 DATA => $collect };
+			 DATA => \@a };
 }
 
 sub gpib_error_string {
@@ -613,4 +678,12 @@ sub getDeviceInfo {
 	return \%retval ;
 }
 
+sub sdc_getFileno {
+    my $self   = shift;
+    my $params = shift;
+
+    my $v = LinuxGpib::sdc_getFileno( 16 );
+
+	return { STATUS=>"OK", FILENO => $v } ;
+}
 1;

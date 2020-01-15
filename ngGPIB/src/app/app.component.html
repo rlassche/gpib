@@ -1,4 +1,7 @@
-<nav class="navbar navbar-default">
+<nav 
+class="navbar navbar-default">
+
+
   <div class="container-fluid">
     <div class="navbar-header">
       <a class="navbar-brand" href="#">{{websitename}}</a>
@@ -13,6 +16,28 @@
     </ul>
   </div>
 </nav>
+{{objArray|json}}
+<p *ngFor="let o of objArray">{{o.name}} - {{o.value}}</p>
+
+<h2>Version 1</h2>
+
+
+<select name="" id="">
+  <option *ngFor="let o of objArray" [value]="o.value">{{o.name}}</option>
+</select>
+
+<h2>Version 2</h2>
+<select name="" id="" ngModel (change)="updateSelectedValue( $event, o)">
+  <option *ngFor="let o of objArray" [ngValue]="o">{{o.name}}</option>
+</select>
+
+
+<!--
+
+<select [ngModel]="selectedObject | json" (ngModelChange)="updateSelectedValue($event)">
+        <option *ngFor="#o of objArray" [value]="o | json" >{{o.name}}</option>
+</select>
+-->
 <div class="container">
   <router-outlet></router-outlet>
 </div>
