@@ -80,16 +80,28 @@ ok( $rv->{STATUS} eq "OK" && $rv->{IBERR} == 0 && $rv->{DEVICE_FD},
 			", DEVICE_FD=" . $rv->{DEVICE_FD} );
 my $device_fd = $rv->{DEVICE_FD} ;
 
+$rv = $gpib->sdc_getFileno( { DEVICE_FD => $device_fd } ) ;
+ok( $rv->{STATUS} eq "OK" && $rv->{FILENO} > 0 , "sdc_getFileno $rv->{FILENO}");
+my $fileno = $rv->{FILENO};
+print "FILENO=$fileno\n" ;
+#exit;
+
+# Channel B
+my $command="FB";
+print "send $command\n" ;
+$rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$command } ) ;
+ok( $rv->{STATUS} eq "OK", "Send $command" ) ; 
+
 #$rv = $gpib->printConfig( { DEVICE_FD=> $device_fd } ) ;
 #die Dumper( $rv ) ;
 my $command="Q7";
 $rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$command } ) ;
 ok( $rv->{STATUS} eq "OK" && $rv->{IBERR_DESCRIPTION} eq "" , 
-	"Send command: $command CMPL" ) ;
+	"Send $command" ) ;
 my $command="RGS";
 $rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$command } ) ;
 ok( $rv->{STATUS} eq "OK" && $rv->{IBERR_DESCRIPTION} eq "" , 
-	"Send command: $command CMPL" ) ;
+	"Send $command" ) ;
 
 #my $timeout=10;
 #my $s = IO::Select->new() ;
@@ -104,13 +116,54 @@ ok( $rv->{STATUS} eq "OK" && $rv->{IBERR_DESCRIPTION} eq "" ,
 #
 #
 # SRS3 = Store display resolution 3: gate time=1ms, number of digits=3
-my $command="SRS3";
-$command="SRS6";
+my $command="SRS7";
+$command="SRS9";
 $rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$command } ) ;
 ok( $rv->{STATUS} eq "OK" && $rv->{IBERR_DESCRIPTION} eq "" , 
-	"Send command: $command CMPL" ) ;
+	"Send $command " ) ;
 #die Dumper( $rv ) ;
 my $i=0;
+
+$rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>"FA" } ) ;
+#my $fileno =9 ;
+my $sel = IO::Select->new();
+print "Add fileno: $fileno\n" ;
+$sel = IO::Select->new();
+$sel->add( \*STDIN ) ;
+$sel->add( $fileno ) ;
+print "fileno: $fileno\n" ;
+print "GO****" . Dumper( $sel  ) ;;
+$count=0;
+my $line;
+while(@ready = $sel->can_read && $count < 2) {
+		print "$count: AFTER SELECT, SOMEONE HAS DATA \n" ;
+		$count++;
+        foreach $fh (@ready) {
+			print "YES: " . Dumper( $fh ) . " \n" ;
+			if( $fh == $fileno ) {
+				print "READ FROM GPIB\n";
+exit;
+				$rv = $gpib->read( { DEVICE_FD => $device_fd } ) ;
+				$count++;
+				printf( "%3d. DEVICE %10s ", $count, $device_id);  
+				print Dumper( $rv->{DATA} );
+			} else {
+				my $buffer;
+				my $x=read( $fh, $buffer, 100 ) ;
+				print "NA de read: $x\n" ;
+			}
+			if( $fh == \*STDIN ) {
+				print "READ FROM STDIN\n";
+				$line=<STDIN>;
+				print "STDIN: $line\n";
+				exit;
+			}
+			#die Dumper( $rv ) ;
+		}
+}
+print "AFTER THE WHILE\n" ;
+exit;
+#$sel->add(\*STDIN);
 while( $i++<10 ) {
 	$rv = $gpib->read( { DEVICE_FD => $device_fd } ) ;
 	#print "##### $i #####\n". Dumper( $rv ) ;

@@ -231,4 +231,8 @@ export class DevicesComponent implements OnInit {
   public hasDocumentation: boolean = false
   public documentation:[];
 
+  updateSelectedValue( e , o ) {
+    console.log( "updateSelectedValue: ", e, o )
+    console.log( "o: ", o )
+  }
 }
