@@ -494,7 +494,7 @@ sub read {
 			if( (LinuxGpib::ThreadIbsta() & ERR) == ERR ) {
 				$debug .=sprintf( "ERROR on ibrd: ibsta == ERR, buffer: %s, cnt == %d, ibrd retval 0x%X", $buffer, $cnt, $rv ) ;
 				print "$debug";
-				exit;
+				return { STATUS => "ERROR", MESSAGE => "IBSTA ERROR" };
 				#if( $collect ne "" ) {
 				#		die "VREEMD: ERROR MAAR TIJDENS HET LEZEN:  $debug, collect==>$collect<===" ;
 				#}

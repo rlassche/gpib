@@ -124,25 +124,36 @@ ok( $rv->{STATUS} eq "OK" && $rv->{IBERR_DESCRIPTION} eq "" ,
 #die Dumper( $rv ) ;
 my $i=0;
 
+$rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>"FA" } ) ;
 #my $fileno =9 ;
 my $sel = IO::Select->new();
 print "Add fileno: $fileno\n" ;
 $sel = IO::Select->new();
-$sel->add( $fileno ) ;
 $sel->add( \*STDIN ) ;
-print "GO****";
+$sel->add( $fileno ) ;
+print "fileno: $fileno\n" ;
+print "GO****" . Dumper( $sel  ) ;;
 $count=0;
 my $line;
-while(@ready = $sel->can_read && count < 2) {
-		#print "IN DE WHILE\n" ;
+while(@ready = $sel->can_read && $count < 2) {
+		print "$count: AFTER SELECT, SOMEONE HAS DATA \n" ;
+		$count++;
         foreach $fh (@ready) {
+			print "YES: " . Dumper( $fh ) . " \n" ;
 			if( $fh == $fileno ) {
+				print "READ FROM GPIB\n";
+exit;
 				$rv = $gpib->read( { DEVICE_FD => $device_fd } ) ;
 				$count++;
 				printf( "%3d. DEVICE %10s ", $count, $device_id);  
 				print Dumper( $rv->{DATA} );
+			} else {
+				my $buffer;
+				my $x=read( $fh, $buffer, 100 ) ;
+				print "NA de read: $x\n" ;
 			}
 			if( $fh == \*STDIN ) {
+				print "READ FROM STDIN\n";
 				$line=<STDIN>;
 				print "STDIN: $line\n";
 				exit;

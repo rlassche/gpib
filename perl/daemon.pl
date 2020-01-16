@@ -110,23 +110,27 @@ sub deamon {
 
 	my $count=0;
 	my $data;
+	my %DEVICES;
 
 	# Store the CMDs into the sqlite3 database
 	$sql = "INSERT INTO dataRecords( port, data ) VALUES ( ?, ? )";
 	$sel->add($fileno);
+	$DEVICES{$fileno} = $device_id;
 
 	print "Waiting...\n#######################################\n";
 	my $count=0;
 	my $valueCount=0;
 	while( my @ready = $sel->can_read ) {
-		print "\n";
+		print "someone is ready\n";
 		$count++;
 		if( $count > 1000 ) {
 			$count++ ;
 			last;
 		}
 		foreach $fh (@ready) {
+			print "$fh is ready\n" ;
 			if( $fh == $listener ) {
+				print "LISTENER is READY\n" ;
 				my $client = $listener->accept;
 				$sel->add($client);
 				print "Listener Connects client: peeraddr=".$client->peerport ."\n";
@@ -137,21 +141,22 @@ sub deamon {
 				);
 				$clients{$client->peerport}=\%newCLIENT;
 				print $client "Snoeks telnet server $VERSION\n";
-			} else {
-				if( $fh == $fileno ) {
+			} 
+			if( defined $DEVICES{$fh} ) {
+					print "GPIB IS READY ($fh)\n" ;
 					$rv = $gpib->read( { DEVICE_FD => $device_fd } );
 					if( $rv->{STATUS} eq "OK" ) {
 						#print "DAEMON COMPLETE MESSAGE: AANTAL:" .
 						#		@{$rv->{DATA}}."\n";
 						for( my $j=0; $j< @{$rv->{DATA}}; $j++) {
-								printf( "---------- %4d VALUE: %s\n",
-										$valueCount++, $rv->{DATA}->[$j] ) ;
+								printf( "---------- %15s %4d VALUE: %s\n",
+										$device_id, $valueCount++, $rv->{DATA}->[$j] ) ;
 						}
 					} else { 
 						#print "main: STATUS= " . $rv->{STATUS}."\n";
 					}
-					next;
-				} else {
+				} 
+				if( ! defined $DEVICES{$fh} ) {
 					my($remote_address) = $fh->recv( $data, 1024 );
 
 					#print "remote_address: $remote_address\n"  ;
@@ -169,6 +174,8 @@ sub deamon {
 					# For test purpose: strip CR/LF in telnet
 					$data =~ s/\r\n$//;
 					print "data 2      : " . $data . "\n";
+					$rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$data } ) ;
+					print Dumper( $rv ) ;
 
 					# Concat the data portion
 					$clients{$fh->peerport()}->{DATA} .= $data;
@@ -200,10 +207,9 @@ sub deamon {
 							$clients{$p}->send("Msg from: ". $data);
 						}
 					}
-					print "simulate working 20 sec...";
-					sleep(20);
+					#print "simulate working 20 sec...";
+					#sleep(20);
 				}
-			}
 		}
 		#print "\nCLIENTS STATUS: ". Dumper( \%clients );
 		print "Waiting...";
