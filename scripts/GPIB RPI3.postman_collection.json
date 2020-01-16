@@ -1,0 +1,165 @@
+{
+	"info": {
+		"_postman_id": "02f154c4-ae4b-4a44-8309-200d65dd3639",
+		"name": "GPIB RPI3",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "initDevice",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Access-Control-Allow-Origin",
+						"value": "*",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"DEVICE_ID\":\"3456A\"\n}"
+				},
+				"url": {
+					"raw": "http://rpi3:3001/gpib/initDevice",
+					"protocol": "http",
+					"host": [
+						"rpi3"
+					],
+					"port": "3001",
+					"path": [
+						"gpib",
+						"initDevice"
+					]
+				},
+				"description": "Init a GPIB device"
+			},
+			"response": []
+		},
+		{
+			"name": "taGetDevice",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Access-Control-Allow-Origin",
+						"value": "*",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"MODE\":\"search\",\n\t\"CURRENT_FIELD\": \"DEVICE_ID\",\n\t\"FORM_FIELDS\":{\"DEVICE_ID\":\"hp\"},\n\t\"KEYS\":[]\n}"
+				},
+				"url": {
+					"raw": "http://rpi3:3001/gpib/taGetDevice",
+					"protocol": "http",
+					"host": [
+						"rpi3"
+					],
+					"port": "3001",
+					"path": [
+						"gpib",
+						"taGetDevice"
+					]
+				},
+				"description": "Init a GPIB device"
+			},
+			"response": []
+		},
+		{
+			"name": "getDeviceInfo",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Access-Control-Allow-Origin",
+						"value": "*",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"MODE\":\"search\",\n\t\"FORM_FIELDS\":{\"DEVICE_ID\":\"HP - Digital Voltmeter\"},\n\t\"KEYS\":[\n\t\t[\"DEVICE_ID\",{\n\t\t\t\t\"keyColumnName\":\"DEVICE_ID\",\n\t\t\t\t\"keyValue\":\"3456A\",\n\t\t\t\t\"typeaheadColumnName\":\"DESCRIPTION\",\n\t\t\t\t\"typeaheadValue\":\"HP - Digital Voltmeter\"\n\t\t\t\t}\n\t\t]\n\t]\n}"
+				},
+				"url": {
+					"raw": "http://rpi3:3001/gpib/getDeviceInfo",
+					"protocol": "http",
+					"host": [
+						"rpi3"
+					],
+					"port": "3001",
+					"path": [
+						"gpib",
+						"getDeviceInfo"
+					]
+				},
+				"description": "Init a GPIB device"
+			},
+			"response": []
+		},
+		{
+			"name": "sendToDevice",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Access-Control-Allow-Origin",
+						"value": "*",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"DEVICE_ID\": \"3456A\",\n\t\"DEVICE_COMMAND\": \"F1R1M0T4\"\n}"
+				},
+				"url": {
+					"raw": "http://rpi3:3001/gpib/sendToDevice",
+					"protocol": "http",
+					"host": [
+						"rpi3"
+					],
+					"port": "3001",
+					"path": [
+						"gpib",
+						"sendToDevice"
+					]
+				},
+				"description": "Init a GPIB device"
+			},
+			"response": []
+		},
+		{
+			"name": "readFromDevice",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Access-Control-Allow-Origin",
+						"type": "text",
+						"value": "*"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"DEVICE_ID\": \"3456A\"\n}"
+				},
+				"url": {
+					"raw": "http://rpi3:3001/gpib/readFromDevice",
+					"protocol": "http",
+					"host": [
+						"rpi3"
+					],
+					"port": "3001",
+					"path": [
+						"gpib",
+						"readFromDevice"
+					]
+				},
+				"description": "Init a GPIB device"
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
