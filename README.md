@@ -23,6 +23,10 @@ Determine the currenct kernel version
 
 `sudo apt-get install linux-headers-$(uname -r)`
 
+NOTE: Some rpi release cannot download the header files with the command. Check in /lib/modules if the header files already exist.
+
+Kernel source for 4.19.58-v7+: https://github.com/raspberrypi/linux
+
 * Kernel updates
 
 Linux has regular kernel-updates and then the gpib-sources should be compiled against the new kernel. 

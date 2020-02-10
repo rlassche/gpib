@@ -4,8 +4,10 @@ use Mojolicious::Plugin::Database;
 use Database;
 use Data::Dumper;
 use SDC::GPIB;
+#use Mojo::Transaction::WebSocket;
 
 
+my $clients = {} ;
 # This method will run once at server start
 sub startup {
   my $self = shift;
@@ -75,6 +77,7 @@ sub startup {
   $r->post('/gpib/sendToDevice')->to('Rest#sendToDevice');
   $r->post('/gpib/readFromDevice')->to('Rest#readFromDevice');
   $r->post('/gpib/documentation')->to('Rest#documentation');
+  $r->get('/echo')->to('Ws#echo');
 }
 
 1;
