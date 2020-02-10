@@ -30,7 +30,7 @@ $| = 1;
 # create a connecting socket
 my $socket = new IO::Socket::INET (
     PeerHost => 'localhost',
-    PeerPort => '7777',
+    PeerPort => '3000',
     Proto => 'tcp',
 );
 die "cannot connect to the server $!\n" unless $socket;

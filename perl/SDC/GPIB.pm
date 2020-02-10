@@ -27,6 +27,7 @@
 package SDC::GPIB;
 use Moose;
 use LinuxGpib;
+use Device::SerialPort;
 
 use Try::Tiny;
 #use Crypt::JWT qw(decode_jwt encode_jwt);
@@ -39,6 +40,9 @@ use JSON::XS;
 use File::Slurp;
 use MIME::Base64 qw( encode_base64 );
 
+my $usbDevice='/dev/ttyUSB3' ;
+
+use constant CRLF => "\n\r";
 
 my @tmo_name = qw(
     TNONE T10us T30us T100us T300us T1ms  T3ms  
@@ -237,13 +241,11 @@ sub printConfig {
     #my $iberr = $gpib->iberr;
     my $v;
  
-    print "Configuration for gpib\n";
 	my $result="xxxx";
     $v = LinuxGpib::ibask( $params->{DEVICE_FD}, IbaAUTOPOLL, \$result );
 	if( ($v & ERR ) == ERR ) {
 		print "HELAAS: ERROR\n" ;
 	}
-die sprintf( "0x%X", $v ) ;
 #    print "    Automatic serial polling enabled.\n" if $v;
 #    print "    Automatic serial polling diabled.\n" if !$v;
 # 
@@ -350,27 +352,49 @@ sub initDevice {
 	my $rv ;
 	my $debug="";
 	my $status = "ERROR" ;
+	my $retval ;
 
 	$rv = $self->getDeviceInfo( $params ) ;
+	# prologix-gpib-usb or ...
+	#$self->{CONNECTION_TYPE} = $rv->{GPIB_DEVICE}->[0]->{CONNECTION_TYPE} ;
 	my $x;
 	if( $rv->{STATUS} eq "OK" ) {
 		$self->{GPIB_DEVICE} = $rv->{GPIB_DEVICE}[0];
-		$debug .= sprintf( "EOS_MODE == 0x%X, SEND_EOI== 0x%X, TIMEOUT 0x%X, ", 
+		if( $self->{GPIB_DEVICE}->{CONNECTION_TYPE} eq "prologix-gpib-usb" ) {
+			if( ! ($self->{PORT} = Device::SerialPort->new($usbDevice)) ) {
+				return { STATUS => "ERROR", CONNECTION_TYPE=> "prologix-gpib-usb",
+						 USB_DEVICE=> $usbDevice, MESSAGE => "CANNOT OPEN" }
+			}
+			$status = "OK";
+			$debug .= 'prologix-gpib-usb, device=' . $usbDevice;
+			$self->{PORT}->baudrate(9600); # Configure this to match your device
+			$self->{PORT}->databits(8);
+			$self->{PORT}->parity("none");
+			$self->{PORT}->stopbits(1);
+
+			$retval =  {
+				STATUS => $status, 
+				DEBUG => $debug,
+				DEVICE_FD => $self->{PORT}->{HANDLE} ,
+				PORT => $self->{PORT}
+			} ;
+		} else {
+			$debug .= sprintf( "EOS_MODE == 0x%X, SEND_EOI== 0x%X, TIMEOUT 0x%X, ", 
 						$self->{GPIB_DEVICE}->{EOS_MODE},
 						$self->{GPIB_DEVICE}->{SEND_EOI}, 
 						$self->{GPIB_DEVICE}->{TIMEOUT} 
 						);
-		###################################################################################
-		# board_index: specifies which GPIB interface board the device is connected to. 
-		# pad and sad: arguments specify the GPIB address of the device to be opened 
-		# 				(see ibpad() and ibsad()). 
-		# timeout: for io operations is specified by timeout (see ibtmo()). 
-		# If send_eoi is nonzero: then the EOI line will be asserted with the last byte sent 
-		# 					during writes (see ibeot()). 
-		# eos: specifies the end-of-string character and whether or not its reception should 
-		# 		terminate reads (see ibeos()). 
-		######################################################################################
-		$dev=LinuxGpib::ibdev(
+			###################################################################################
+			# board_index: specifies which GPIB interface board the device is connected to. 
+			# pad and sad: arguments specify the GPIB address of the device to be opened 
+			# 				(see ibpad() and ibsad()). 
+			# timeout: for io operations is specified by timeout (see ibtmo()). 
+			# If send_eoi is nonzero: then the EOI line will be asserted with the last byte sent 
+			# 					during writes (see ibeot()). 
+			# eos: specifies the end-of-string character and whether or not its reception should 
+			# 		terminate reads (see ibeos()). 
+			######################################################################################
+			$dev=LinuxGpib::ibdev(
 				$self->{GPIB_DEVICE}->{MINOR},
 				$self->{GPIB_DEVICE}->{PAD},
 				$self->{GPIB_DEVICE}->{SAD}, 
@@ -422,12 +446,18 @@ sub initDevice {
 				#	die "ibconfig: ERROR" ;
 				#}
 			}
+			$retval =  {
+				STATUS => $status, 
+				DEBUG => $debug,
+				TRHREADIBSTA => sprintf( "0x%X 0%O %d", LinuxGpib::ThreadIbsta(), LinuxGpib::ThreadIbsta(), 
+														LinuxGpib::ThreadIbsta()),
+				THREADIBERR => sprintf( "0x%X 0%O %d", 	LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr(), 
+														LinuxGpib::ThreadIberr()),
+				DEVICE_FD => $dev 
+			} ;
+		}
 	}
-	return {STATUS => $status, 
-			DEBUG => $debug,
-			TRHREADIBSTA => sprintf( "0x%X 0%O %d", LinuxGpib::ThreadIbsta(), LinuxGpib::ThreadIbsta(), LinuxGpib::ThreadIbsta()),
-			THREADIBERR => sprintf( "0x%X 0%O %d", LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr()),
-			DEVICE_FD => $dev } ;
+	return $retval ;
 }
 sub send {
     my $self = shift;
@@ -436,32 +466,43 @@ sub send {
 	my $status = "ERROR" ;
 	my $iberr="";
 	my $debug="";
-	my $rv=LinuxGpib::ibwrt( 
+	my $retval ;
+	if( $self->{GPIB_DEVICE}->{CONNECTION_TYPE} eq "prologix-gpib-usb" ) {
+		#print "send->$params->{COMMAND}\n" ;
+		my $x = $self->{PORT}->write( $params->{COMMAND} . CRLF) ; 
+		if( $x == length( $params->{COMMAND} . CRLF) ) {
+			$status = "OK";
+		}
+		$retval = { STATUS => $status, COMMAND=> $params->{COMMAND}, CONNECTION_TYPE=>'prologix-gpib-usb' }; 
+	} else {
+		my $rv=LinuxGpib::ibwrt( 
 				$params->{DEVICE_FD}, 
 				$params->{COMMAND},
 				length( $params->{COMMAND} ) );
-	if( (LinuxGpib::ThreadIbsta() & ERR) == ERR ) {
-		$debug .= sprintf( "ERROR: ibsta value 0x%X 0%O %d", 
-				LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr());
-		$iberr= $self->gpib_error_string( {IBERR => 
-											LinuxGpib::ThreadIberr() } )->{IBERR_DESCRIPTION} ;
-		$status="ERROR";
-	} elsif( (LinuxGpib::ThreadIbsta() & ENDD) == ENDD ) {
-			$debug .=  sprintf( ", ibsta: END 0x%X, ", ENDD);
-			if( (LinuxGpib::ThreadIbsta() & CMPL) == CMPL ) {
-				$debug .=  sprintf( ", ibsta: CMPL 0x%X", CMPL);
-				$status = "OK" ;
-			}
-	} else {
-		die "send: HUH welke bits????";
-	}
-
-	return { STATUS =>"$status", 
+		if( (LinuxGpib::ThreadIbsta() & ERR) == ERR ) {
+			$debug .= sprintf( "ERROR: ibsta value 0x%X 0%O %d", 
+					LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr());
+			$iberr= $self->gpib_error_string( {IBERR => 
+												LinuxGpib::ThreadIberr() } )->{IBERR_DESCRIPTION} ;
+			$status="ERROR";
+		} elsif( (LinuxGpib::ThreadIbsta() & ENDD) == ENDD ) {
+				$debug .=  sprintf( ", ibsta: END 0x%X, ", ENDD);
+				if( (LinuxGpib::ThreadIbsta() & CMPL) == CMPL ) {
+					$debug .=  sprintf( ", ibsta: CMPL 0x%X", CMPL);
+					$status = "OK" ;
+				}
+		} else {
+			die "send: HUH welke bits????";
+		}
+		$retval ={ STATUS =>"$status", 
 			 THREADIBERR => sprintf( "0x%X 0%O %d", LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr()),
 			 IBERR_DESCRIPTION => $iberr,
 			 TRHREADIBSTA => sprintf( "0x%X 0%O %d", LinuxGpib::ThreadIbsta(), LinuxGpib::ThreadIbsta(), LinuxGpib::ThreadIbsta()),
 			 DEBUG => $debug
-	};
+		}
+	}
+
+	return  $retval ;
 }
 
 # TODO:
@@ -481,67 +522,55 @@ sub read {
 	my $debug="";
 	my $rv ;
 	my $hstring;
+	my $retval ;
 
 	my $collect="";
 	my $cnt;
 	my $rest="";
 	my @a;
 	my $tot=0;
-	#while( ($rv=LinuxGpib::ibrd( $params->{DEVICE_FD}, $buffer, $len )) != 0 )
-	#{
-	$rv=LinuxGpib::ibrd( $params->{DEVICE_FD}, $buffer, $len );
-			$cnt = LinuxGpib::ThreadIbcnt();
-			if( (LinuxGpib::ThreadIbsta() & ERR) == ERR ) {
+
+	if( $self->{GPIB_DEVICE}->{CONNECTION_TYPE} eq "prologix-gpib-usb" ) {
+		( $cnt, $buffer ) = $self->{PORT}->read( $len ) ; 
+		$status ="OK";
+		#print "NR_OF_BYTES: $cnt ->" . $buffer ;
+		
+	} else {
+		$rv=LinuxGpib::ibrd( $params->{DEVICE_FD}, $buffer, $len );
+		$cnt = LinuxGpib::ThreadIbcnt();
+		if( (LinuxGpib::ThreadIbsta() & ERR) == ERR ) {
 				$debug .=sprintf( "ERROR on ibrd: ibsta == ERR, buffer: %s, cnt == %d, ibrd retval 0x%X", $buffer, $cnt, $rv ) ;
-				print "$debug";
 				return { STATUS => "ERROR", MESSAGE => "IBSTA ERROR" };
-				#if( $collect ne "" ) {
-				#		die "VREEMD: ERROR MAAR TIJDENS HET LEZEN:  $debug, collect==>$collect<===" ;
-				#}
-				#last;
-			}
-			#print "TEST 0a: CNT=$cnt (max read len: $len):>>$buffer<<\n";
-			if( defined $self->{REST} ) {
-				#print "PREFIX REST >>$self->{REST}<< + BUFFER >>$buffer<< \n" ;
-				#	
-				my $len1 = length( $self->{REST} ) ;
-				my $len2 = length( $buffer ) ;
-				$tot = $len1 + $len2 ;
-				#print "ADD BUFFER $len2 TO REST $len1. TOTAL = $tot\n";
-				$buffer = $self->{REST} . $buffer ;
-				#print "\t====>$buffer<==\n" ;
-				# REST is used, so clear it
-			} 
-			$self->{REST} = "";
+		}
+	}
 
-			#my $tot = length( $self->{REST} ) + $cnt;
-			#print "BUFLEN: $tot\nBUFFER:>>$buffer<<\n"; 
-			# Get lastbytes first
-			my $last2bytes=substr( $buffer, -2 ) ;
+	if( defined $self->{REST} ) {
+			my $len1 = length( $self->{REST} ) ;
+			my $len2 = length( $buffer ) ;
+			$tot = $len1 + $len2 ;
+			$buffer = $self->{REST} . $buffer ;
+	}
+	$self->{REST} = "";
+
+	# Get lastbytes first
+	my $last2bytes=substr( $buffer, -2 ) ;
 			
-			# Now split
-			# 	
-			if( $buffer =~ /\r\n/ ) {
-				@a = split( /\r\n/, $buffer ) ;
-				#print "SPLITTING buffer >>$buffer<<\n". Dumper( \@a ) ;; 
-				#die "STOP" ;
-			} else {
-				@a =() ;
-			}
+	# Now split
+	# 	
+	if( $buffer =~ /\r\n/ ) {
+			@a = split( /\r\n/, $buffer ) ;
+	} else {
+			@a =() ;
+	}
 
-			if( $last2bytes ne "\r\n" ) {
+	if( $last2bytes ne "\r\n" ) {
 				#print "NO CRLF AT END OF THE STRING: $last2bytes\n" ; 
 				# Last value is not complete yet!
-				#
-				#
-				#		
 				if( @a > 0 ) {
 					#print "DO the POP: a:" . Dumper( \@a ) ;
 					my $p= pop( @a ) ;
 					if( defined $p ) {
 						$self->{REST} = $p;
-						#print "NEW REST=: $self->{REST}. NEW REST LENGTH:".
-								length( $p ) . "\n"  ;
 					}
 				} else {
 					$self->{REST} = $buffer ;
@@ -549,59 +578,19 @@ sub read {
 			} else {
 				#print "CRLF AT THE END!!! KEURIG EINDE\n" ;
 			}
-#print "TEST 1. AANTAL: " . @a . ", a=" .Dumper( \@a ) . "BUFFER: $buffer\n";
-			#print "CNT=$cnt, rest=$rest\n". Dumper( \@a ) ; ;
-#print "TEST 1. AANTAL: " . @a . ", a=" .Dumper( \@a ) ;
-			
-			#$hstring = unpack ("H*",$buffer);
-			##$debug .= ", hstring=$hstring" ;
-			#if( $hstring =~ /0a/ ) {
-			#	$debug .= ", JA, 0a EINDE! COLLECT=$collect";
-			#	$status = "OK" ;
-			#	last;
-			#} else {
-			#	if( "$hstring" !~ /0d/ ) {
-			#		#print "ADD $hstring\n" ;
-			#		$collect .= $buffer ;
-			#	} else {
-			#		$debug .= ", JA HOOR, EEN 0d, NU NOG 1 LEZEN";
-			#		# Wanneer len <> 1 is, dan nu wel op 1 zetten, want er komt nog maar 1 byte
-			#		$len=1;
-			#	}
-			#}
-			##print "BUFFER: **$buffer** -->". $hstring . "<--- ThreadIbcnt:" . LinuxGpib::ThreadIbcnt() . "\n";
-	#}
-	#print " EXIT FROM LOOP " ;
-	#print "************ $collect ***********";
-
-	#my $rv=LinuxGpib::ibrd( $params->{DEVICE_FD}, $buffer, $len ) ;
-	#$debug .= sprintf( "ibrd return value 0x%X ", $rv ) ;
-	#convert to hex
-	#my $hstring = unpack ("H*",$buffer);
-	#$debug .="hstring: $hstring <----";
-	#if( ($rv & CMPL ) == CMPL ) {
-	#	$debug .="ibrd is wel CMPL!!";
-	#}
-	#if( (LinuxGpib::ThreadIbsta() & ERR) == ERR ) {
-	#	$status = "ERROR" ;
-	#	$debug .= sprintf( "ibsta: ERR mask is true: 0x%X", ERR  ) ; 
-	#	$iberr= $self->gpib_error_string( {IBERR => LinuxGpib::ThreadIberr() } )->{IBERR_DESCRIPTION} ;
-	#} else {
-	#	#$buffer =~ s/\r|\n//g;
-	#	$status = "OK";
-	#}
-	#
-	#
-	if( @a == 0 ) {
-		$status = "NOT COMPLETED" ;
-	}
-	#print "driver: STATUS: $status, AANTAL VALUES: ". @a . "\n" ;
-	return { STATUS =>"$status",
-			 THREADIBERR => sprintf( "0x%X 0%O %d", LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr()),
-			 IBERR_DESCRIPTION => $iberr,
-			 TRHREADIBSTA => sprintf( "0x%X 0%O %d", LinuxGpib::ThreadIbsta(), LinuxGpib::ThreadIbsta(), LinuxGpib::ThreadIbsta()),
-			 DEBUG=> $debug,
-			 DATA => \@a };
+		if( @a == 0 ) {
+			$status = "NOT COMPLETED" ;
+		}
+		$retval = { STATUS => $status,
+					DATA => \@a 
+				} ;
+		#$retval ={ STATUS =>"$status",
+		#	 THREADIBERR => sprintf( "0x%X 0%O %d", LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr(), LinuxGpib::ThreadIberr()),
+		#	 IBERR_DESCRIPTION => $iberr,
+		#	 TRHREADIBSTA => sprintf( "0x%X 0%O %d", LinuxGpib::ThreadIbsta(), LinuxGpib::ThreadIbsta(), LinuxGpib::ThreadIbsta()),
+		#	 DEBUG=> $debug,
+		#	 DATA => \@a };
+	return  $retval ;
 }
 
 sub gpib_error_string {
@@ -682,7 +671,13 @@ sub sdc_getFileno {
     my $self   = shift;
     my $params = shift;
 
-    my $v = LinuxGpib::sdc_getFileno( 16 );
+	my $v ;
+
+	if( $self->{GPIB_DEVICE}->{CONNECTION_TYPE} eq "prologix-gpib-usb" ) {
+		$v = $self->{PORT}->{HANDLE} ;
+	} else {
+    	$v = LinuxGpib::sdc_getFileno( $params->{DEVICE_FD} );
+	}
 
 	return { STATUS=>"OK", FILENO => $v } ;
 }
