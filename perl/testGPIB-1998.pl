@@ -33,7 +33,7 @@ use Database;
 use Config;
 use Config::Auto;
 
-my $usbDevice='/dev/ttyUSB3' ;
+my $usbDevice='/dev/ttyUSB0' ;
 
 my( $config, $config_file) ;
 $config_file = "/usr/lib/cgi-bin/gpib.cfg" ;
@@ -68,7 +68,8 @@ ok( $rv->{STATUS} eq "OK" &&
 
 
 $rv = $gpib->initDevice( { DEVICE_ID => $device_id } ) ;
-#die Dumper( $rv ) ;
+ok( $rv->{STATUS} eq "ERROR" , "Prologix without /dev..." ) ;
+$rv = $gpib->initDevice( { DEVICE_ID => $device_id, USB_DEVICE=> $usbDevice } ) ;
 ok( $rv->{STATUS} eq "OK" && $rv->{PORT}, 
 			"Init GPIB device $device_id" ) ;
 
@@ -86,6 +87,7 @@ ok($rv->{FILENO}->isa('IO::Handle'),"sdc_getFileno has IO::Handle");
 ###############################
 my $s = IO::Select->new() ;
 $s->add( \*STDIN );
+print "Add device to select\n" ;
 $s->add( $port->{HANDLE} ); 
 
 
@@ -106,7 +108,7 @@ my( $count, $buffer ) ;
 my $count=0;
 my $max_count=100;
 while( $count<$max_count ) {
-	#print "Waiting.... " ;
+	#print "Waiting.... \n" ;
 	@ready = $s->can_read( $timeout );
 	#print "\n" ;
 	#print "After can_read\n" ;
@@ -114,6 +116,7 @@ while( $count<$max_count ) {
 			#print "foreach: " . Dumper( $fh ) . "\n";
             if($fh == \*STDIN) {
                 $line=<STDIN>;
+				#print "Send to $device_id: " . $line;
 				$rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$line } ) ;
             }
             elsif($fh eq $port->{HANDLE} ) {

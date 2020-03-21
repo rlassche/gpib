@@ -31,7 +31,7 @@ use Database;
 use Config;
 use Config::Auto;
 
-my $usbDevice='/dev/ttyUSB3' ;
+my $usbDevice='/dev/ttyUSB0' ;
 
 my( $config, $config_file) ;
 $config_file = "/usr/lib/cgi-bin/gpib.cfg" ;
@@ -63,12 +63,16 @@ $s->add( $port->{HANDLE} );
 
 my $command="SRS7";
 $rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$command } ) ;
+print "Send to device: $command\n" ;
 $command="FB";
 $rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$command } ) ;
+print "Send to device: $command\n" ;
 $command="Q7";
 $rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$command } ) ;
+print "Send to device: $command\n" ;
 $command="RGS";
 $rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$command } ) ;
+print "Send to device: $command\n" ;
 
 my $timeout=10;
 my @ready;
@@ -79,10 +83,10 @@ my $rest='';
 my $p;
 my( $count, $buffer ) ;
 while( 1 ) {
-	#print "Waiting.... " ;
+	print "Waiting....\n" ;
 	@ready = $s->can_read( $timeout );
 	#print "\n" ;
-	#print "After can_read\n" ;
+	print "After can_read\n" ;
 	foreach $fh (@ready) {
 			#print "foreach: " . Dumper( $fh ) . "\n";
             if($fh == \*STDIN) {
