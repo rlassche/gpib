@@ -40,8 +40,6 @@ use JSON::XS;
 use File::Slurp;
 use MIME::Base64 qw( encode_base64 );
 
-my $usbDevice='/dev/ttyUSB3' ;
-
 use constant CRLF => "\n\r";
 
 my @tmo_name = qw(
@@ -228,7 +226,7 @@ my @tmo_name = qw(
 has 'DATABASE'     => ( is => 'rw', isa => 'Database', lazy_build => 1 );
 
 my $VERSION      = "1.2";
-my $COMPILE_DATE = "08-JAN-2020";
+my $COMPILE_DATE = "20-MAR-2020";
 sub printConfig {
     my $self = shift;
     my $params = shift;
@@ -361,12 +359,16 @@ sub initDevice {
 	if( $rv->{STATUS} eq "OK" ) {
 		$self->{GPIB_DEVICE} = $rv->{GPIB_DEVICE}[0];
 		if( $self->{GPIB_DEVICE}->{CONNECTION_TYPE} eq "prologix-gpib-usb" ) {
-			if( ! ($self->{PORT} = Device::SerialPort->new($usbDevice)) ) {
+			
+			return { STATUS => "ERROR", MESSAGE => "USB_DEVICE not specified" }
+															if( ! defined $params->{USB_DEVICE} ) ;
+			$self->{USB_DEVICE} = $params->{USB_DEVICE} ;
+			if( ! ($self->{PORT} = Device::SerialPort->new($self->{USB_DEVICE})) ) {
 				return { STATUS => "ERROR", CONNECTION_TYPE=> "prologix-gpib-usb",
-						 USB_DEVICE=> $usbDevice, MESSAGE => "CANNOT OPEN" }
+						 USB_DEVICE=> $self->{USB_DEVICE}, MESSAGE => "CANNOT OPEN" }
 			}
 			$status = "OK";
-			$debug .= 'prologix-gpib-usb, device=' . $usbDevice;
+			$debug .= 'prologix-gpib-usb, device=' . $self->{USB_DEVICE};
 			$self->{PORT}->baudrate(9600); # Configure this to match your device
 			$self->{PORT}->databits(8);
 			$self->{PORT}->parity("none");

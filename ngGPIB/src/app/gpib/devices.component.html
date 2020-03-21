@@ -26,6 +26,8 @@
 <div class="row">
     <tabset>
         <tab *ngIf="gpib_device" heading="Setup ">
+            <!--
+
             <table class="table table-striped">
 
                 <caption>GPIB Connection Settings</caption>
@@ -71,8 +73,11 @@
                     </tr>
                 </tbody>
             </table>
+            -->
         </tab>
         <tab *ngIf="gpib_device_functions" heading="Commands">
+
+            <!--
 
             <table class="table table-striped" [mfData]="gpib_device_functions" #mf="mfDataTable" [mfRowsOnPage]="5">
 
@@ -116,6 +121,7 @@
                     </tr>
                 </tfoot>
             </table>
+            -->
             <div *ngIf="! isInitialised">
                 <button class="btn btn-info" (click)="initDevice($event)">
                     Initialise Device </button>

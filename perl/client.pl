@@ -1,54 +1,44 @@
-#!/usr/bin/perl 
-#===============================================================================
-#
-#         FILE:  client.pl
-#
-#        USAGE:  ./client.pl  
-#
-#  DESCRIPTION:  client
-#
-#      OPTIONS:  ---
-# REQUIREMENTS:  ---
-#         BUGS:  ---
-#        NOTES:  ---
-#       AUTHOR:  Rob Lassche (mn), rob@pd1rla.nl
-#      COMPANY:  Me
-#      VERSION:  1.0
-#      CREATED:  01/06/2020 10:13:26 AM
-#     REVISION:  ---
-#===============================================================================
+#!/usr/bin/perl
+# Filename : client.pl
 
 use strict;
-use warnings;
-
-
+use Socket;
 use IO::Socket::INET;
- 
-# auto-flush on socket
-$| = 1;
- 
-# create a connecting socket
-my $socket = new IO::Socket::INET (
-    PeerHost => 'localhost',
-    PeerPort => '3000',
-    Proto => 'tcp',
-);
-die "cannot connect to the server $!\n" unless $socket;
-print "connected to the server\n";
- 
-# data to send to a server
-my $req = 'hello world';
-my $size = $socket->send($req);
-print "sent data of length $size\n";
- 
-# notify server that request has been sent
-shutdown($socket, 1);
- 
-# receive a response of up to 1024 characters from server
-my $response = "";
-$socket->recv($response, 1024);
-print "received response: $response\n";
- 
-$socket->close();
+use IO::Select;
 
+# initialize host and port
+my $host = shift || 'localhost';
+my $port = shift || 7777;
+my $server = "localhost";  # Host IP running the server
 
+my $s = IO::Select->new() ;
+
+my $socket;
+# create the socket, connect to the port
+socket($socket,PF_INET,SOCK_STREAM,(getprotobyname('tcp'))[2])
+   or die "Can't create a socket $!\n";
+connect( $socket, pack_sockaddr_in($port, inet_aton($server)))
+   or die "Can't connect to port $port! \n";
+$socket->autoflush;
+
+$s->add( \*STDIN ); 
+$s->add( $socket ); 
+
+my $timeout=20;
+my @ready;
+my $fh;
+my $line;
+while( 1 ) {
+	@ready = $s->can_read( $timeout );
+	foreach $fh (@ready) {
+            if($fh == \*STDIN) {
+                $line=<STDIN>;
+                print "STDIN: $line\n" ;
+				#$port->write( $line."\n\r" ) ; 
+				print $socket $line ;
+            } elsif( $fh == $socket ) {
+				$line=<$socket>;
+				print "SOCKET: $line" ;
+			}
+	}
+}
