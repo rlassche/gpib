@@ -75,6 +75,7 @@ $sel = IO::Select->new();
 
 # Wait for data from the Prologix/GPIB controller
 $sel->add( $device_fd );
+#$sel->add( \*STDIN ); 
 
 # Server listen port
 my $port = 7777;
