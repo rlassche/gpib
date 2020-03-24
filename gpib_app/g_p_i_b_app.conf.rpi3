@@ -1,13 +1,12 @@
 {
-  compile_date => '30-DEC-2019',
-  version      => 1.0,
+  compile_date => '26-DEC-2019',
+  version      => 1.3,
   dsn          => 'dbi:mysql:host=localhost:database=gpib',
   user         => 'gpib',
   password     => 'gpib',
-
-  secrets => ['b5b03d5cfd3e9ba86d81ebeb46bcf7732228edad'],
+  secrets	=> ['024ae74ca2dd596aceb18a5888310596ccc5d2c7'],
   hypnotoad => {
-        listen  => ['https://www-mijn-hobbies.nl:3001?cert=cert.pem&key=key.pem' ],
-        workers => 1
+        listen  => ['https://www.mijn-hobbies.nl:3001?cert=cert.pem&key=key.pem' ],
+		workers => 5
     }
 }
