@@ -17,6 +17,7 @@ use Log::Log4perl;
 use Database;
 use Config;
 use Config::Auto;
+use Getopt::Long;
 
 my( $sel, $fh, $some_handle, $timeout, $line, @ready, @handles);
 my $usbDevice='/dev/ttyUSB0' ;
@@ -33,9 +34,38 @@ my $logger = Log::Log4perl->get_logger();
 
 # Server listen port
 my $telnetListenPort = 7777;
+my $telnetHost = '192.168.123.148';
 
 # Start this process in the foreground or background
 my $runningInForeground=0;
+
+my $WSHOST='localhost';
+my $WSPORT=3000;
+my $wsEndpoint = "ws://$WSHOST:$WSPORT/echo";
+
+sub usage {
+	print "USAGE:\n" ;
+	print "$0 [--foreground] [--ws='ws-end-point']\n" ;
+	print "\t[--ip=a-ip-adress] [--port=listen-port-number]\n" ;
+	print "\t[--usb=/dev/ttyUSBx]\n";
+	print "\nExample:\n";
+	print "$0 --foreground \\\n\t\t--ws='wss://www.mijn-hobbies.nl:3001/echo' \\\n" ;
+	print "\t\t--ip=192.168.123.148 --port=3001 \\\n" ;
+	print "\t\t--usb=/dev/ttyUSB3\n" ;
+	exit;
+}
+
+GetOptions( 'ws=s' => \$wsEndpoint, 
+			'foreground' => \$runningInForeground,
+			'ip=s' => \$telnetHost,
+			'port=s' => \$telnetListenPort
+) or die usage() ;
+
+print "wsEndpoint:          $wsEndpoint\n" ;
+print "runningInForeground: $runningInForeground\n" ;
+print "ip:                  $telnetHost\n" ;
+print "port:                $telnetListenPort\n" ;
+print "usb:                 $usbDevice\n" ;
 
 # Current process id (PID)
 my $pid=$$;
@@ -45,12 +75,12 @@ if( $runningInForeground == 0 ) {
 	if( $pid != 0 ) {
 		$logger->info( "PID: $pid" ) ;
 		print "prologix-usb-controller.pl is running as process $pid \n" ;
-		print "Listen on port $telnetListenPort\n" ;
+		print "Listen on port $telnetHost:$telnetListenPort\n" ;
 		exit 0 ;
 	}
 } else {
 	print "prologix-usb-controller.pl is running as process $pid \n" ;
-	print "Listen on port $telnetListenPort\n" ;
+	print "Listen on port $telnetHost:$telnetListenPort\n" ;
 }
 
 # Open the Mysql database
@@ -78,7 +108,6 @@ if( $rv->{STATUS} ne "OK" ) {
 	die "Cannot initDevice $device_id, $usbDevice" . Dumper( $rv ) ;
 }
 my $serialPort = $rv->{PORT} ;
-
 
 my $device_fd = $rv->{DEVICE_FD} ;
 $logger->info( "Device description=$device_description, device_id=$device_id, device_fd=$device_fd" ) ;
@@ -116,11 +145,17 @@ $loop->add( IO::Async::Stream->new_for_stdin(
  
       while( $$buffref =~ s/^(.*)\n// ) {
          print "You typed a line $1\n" ;
-		 $wsClient->send_text_frame( "STDIN: $1" ) ;
-		 $serialPort->write( $1."\n\r" ) ; 
+		 try {
+			# Send data to websocket
+		 	$wsClient->send_text_frame( "STDIN: $1" ) ;
+		 } catch {
+			print "ERROR: Cannot send to websocket\n" ;
+		 };
+		 # Send data to Prologix-usb
+		 $rv = $serialPort->write( $1."\n\r" ) ; 
 		 my $count=0;
 		 foreach my $s (keys %clients) {
-			print "SEND TO TELNET CLIENT: $count++\n" ;
+			print "SEND TO TELNET CLIENT: $1\n" ;
 			$clients{$s}->write( $1 ) ;
 		 }
       }
@@ -138,16 +173,17 @@ $logger->info( $welcome ) ;
 # Connect to the WEBSOCKET and identiry your self
 #
 #############################################################
-my $WSHOST='localhost';
-my $WSPORT=3000;
 
+try {
 # Start the GPIB morbo server!
 $wsClient->connect(
-   url => "ws://$WSHOST:$WSPORT/echo",
+   url => $wsEndpoint,
 )->then( sub {
-    #print "Connect to ws://$WSHOST:$WSPORT/echo\n" ;
     $wsClient->send_text_frame( "Hello, world from $0!\n" );
 })->get;
+} catch {
+	print "ERROR: Cannot connect to websocket: $wsEndpoint\n" ;
+}
  
 $loop->add( IO::Async::Stream->new(
    handle  => $serialPort->{HANDLE},
@@ -171,58 +207,6 @@ $loop->add( IO::Async::Stream->new(
    },
 ) );
 
-############################
-#
-# Wait for incomming data:
-# 	data from Prologix or GPIB bus
-# 	data from telnet client (with commands for Prologix or GPIB devices)
-#
-############################
-#$sel = IO::Select->new();
-
-# Wait for data from the Prologix/GPIB controller
-#$sel->add( $device_fd );
-#$sel->add( \*STDIN ); 
-
-
-# creating a listening socket
-#my $socket = new IO::Socket::INET (
-#    LocalHost => '0.0.0.0',
-#    LocalPort => $port,
-#    Proto => 'tcp',
-#    Listen => 5,
-#    Reuse => 1
-#);
-#$logger->info( "Listen port $port " ) ;
-#$loop->add( IO::Async::Stream->new(
-#   handle  => $socket,
-#   on_read => sub {
-#      my ( $self, $buffref, $eof ) = @_;
-# 
-#      while( $$buffref =~ s/^(.*)\n// ) {
-#         print "IO::Async::Stream: from telnetSocket $1\n";
-#		 #	exit;
-#		 #$wsClient->send_text_frame( "SOCKET2 $1" ) ;
-#      }
-# 
-#      return 0;
-#   },
-#) );
-
-#$loop->listen(
-#	service => "7777",
-#	socktype => "stream",
-#	on_stream => sub {
-#      	my ( undef, $stream ) = @_;
-#        $stream->configure(
-#         	on_read => sub {
-#			}
-#		);
-#		print "ON_STREAM";
-#		return 0;
-#	}
-#)->get;
-
 my $listener = IO::Async::Listener->new(
    on_stream => sub {
       my ( undef, $stream ) = @_;
@@ -245,7 +229,11 @@ my $listener = IO::Async::Listener->new(
 		 	$serialPort->write( $$buffref."\n\r" ) ; 
 
 			# Send to the websocket
+			try {
 		 	$wsClient->send_text_frame( "TELNET SOCKET: $$buffref" ) ;
+			} catch {
+				print "Cannot send to WEBSOCKET\n" ;
+		 	};
 
             print "TELNET SOCKET: $$buffref" if( $runningInForeground == 1 ) ;
             $$buffref = "";
@@ -259,14 +247,18 @@ my $listener = IO::Async::Listener->new(
  
 $loop->add( $listener );
 
+try {
 $listener->listen(
    addr => {
       family   => "inet",
       socktype => "stream",
       port     => $telnetListenPort,
-      ip       => 'localhost',
+      ip       => $telnetHost
    },
 )->get;
+} catch {
+	print "ERROR: Cannot create listen socket $telnetHost:$telnetListenPort\n";
+};
 
 $loop->run;
 
