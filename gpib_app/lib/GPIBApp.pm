@@ -36,18 +36,18 @@ sub startup {
 
 
 	# create the socket, connect to the port
-    socket($socket,PF_INET,SOCK_STREAM,(getprotobyname('tcp'))[2])
-       or die "Can't create a socket $!\n";
-    connect( $socket, pack_sockaddr_in($port, inet_aton($server)))
-       or die "Can't connect to port $port! \n";
-    $socket->autoflush;
+#    socket($socket,PF_INET,SOCK_STREAM,(getprotobyname('tcp'))[2])
+#       or die "Can't create a socket $!\n";
+#    connect( $socket, pack_sockaddr_in($port, inet_aton($server)))
+#       or die "Can't connect to port $port! \n";
+#    $socket->autoflush;
 
-	my $s = IO::Select->new() ;
+#	my $s = IO::Select->new() ;
 
-	$s->add( $socket );
-	$self->app->helper( SOCKETHLP => sub {
-            return { SOCKET => $s }
-        }) ;
+#	$s->add( $socket );
+#	$self->app->helper( SOCKETHLP => sub {
+#            return { SOCKET => $s }
+#        }) ;
 
 
 

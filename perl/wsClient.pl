@@ -79,14 +79,14 @@ $loop->add( IO::Async::Stream->new_for_stdin(
 #);
 
 
-my $port=7777;
+my $port=8001;
 my $server='localhost';
 my $telnetSocket;
 # create the socket, connect to the port
 socket($telnetSocket,PF_INET,SOCK_STREAM,(getprotobyname('tcp'))[2])
    or die "Can't create a socket $!\n";
 connect( $telnetSocket, pack_sockaddr_in($port, inet_aton($server)))
-   or die "Can't connect to port $port! \n";
+   or die "Can't connect to port $port! \n . $!";
 $telnetSocket->autoflush;
 $loop->add( IO::Async::Stream->new(
    handle  => $telnetSocket,

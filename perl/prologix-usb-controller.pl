@@ -25,23 +25,33 @@ my( $config, $config_file) ;
 $config_file = "/usr/lib/cgi-bin/gpib.cfg" ;
 $config = Config::Auto::parse( $config_file ) ;
 
+my %clients;
 my $device_name = '1998';
 my $jsonizer = JSON::XS->new() ;
 Log::Log4perl::init('log4perl.conf');
 my $logger = Log::Log4perl->get_logger();
 
-my $runningInForeground=1;
+# Server listen port
+my $telnetListenPort = 7777;
 
+# Start this process in the foreground or background
+my $runningInForeground=0;
+
+# Current process id (PID)
+my $pid=$$;
 if( $runningInForeground == 0 ) {
-my $pid = fork() ;
-if( $pid != 0 ) {
-	$logger->info( "PID: $pid" ) ;
-	print "server.pl is running as process $pid \n" ;
-	print "Listen on port 7777\n" ;
-	exit 0 ;
+	# Fork this process and continue in the background
+	$pid = fork() ;
+	if( $pid != 0 ) {
+		$logger->info( "PID: $pid" ) ;
+		print "prologix-usb-controller.pl is running as process $pid \n" ;
+		print "Listen on port $telnetListenPort\n" ;
+		exit 0 ;
+	}
+} else {
+	print "prologix-usb-controller.pl is running as process $pid \n" ;
+	print "Listen on port $telnetListenPort\n" ;
 }
-}
-
 
 # Open the Mysql database
 my $db = new Database( dsn => $config->{dsn},
@@ -105,9 +115,14 @@ $loop->add( IO::Async::Stream->new_for_stdin(
       my ( $self, $buffref, $eof ) = @_;
  
       while( $$buffref =~ s/^(.*)\n// ) {
-         print "You typed a line $1\n";
+         print "You typed a line $1\n" ;
 		 $wsClient->send_text_frame( "STDIN: $1" ) ;
 		 $serialPort->write( $1."\n\r" ) ; 
+		 my $count=0;
+		 foreach my $s (keys %clients) {
+			print "SEND TO TELNET CLIENT: $count++\n" ;
+			$clients{$s}->write( $1 ) ;
+		 }
       }
  
       return 0;
@@ -115,7 +130,7 @@ $loop->add( IO::Async::Stream->new_for_stdin(
 ) );
 }
 # Welcome message for a telnet-connection client
-my $welcome = "server.pl - V1.0\n";
+my $welcome = "prologix-usb-controller.pl - V1.0\n";
 $logger->info( $welcome ) ;
 
 #############################################################
@@ -126,6 +141,7 @@ $logger->info( $welcome ) ;
 my $WSHOST='localhost';
 my $WSPORT=3000;
 
+# Start the GPIB morbo server!
 $wsClient->connect(
    url => "ws://$WSHOST:$WSPORT/echo",
 )->then( sub {
@@ -139,8 +155,16 @@ $loop->add( IO::Async::Stream->new(
       my ( $self, $buffref, $eof ) = @_;
  
       while( $$buffref =~ s/^(.*)\n// ) {
+		 # In forground mode: echo value to stdout
          print "$1\n" if( $runningInForeground == 1 ) ;
+		 # Send value to the websocket connection
 		 $wsClient->send_text_frame( $1 ) ;
+
+		 # Send the value to all telnet clients
+		 foreach my $s (keys %clients) {
+			# Send to telnet clients
+			$clients{$s}->write( $1."\n\r" ) ;
+		 }
       }
  
       return 0;
@@ -160,35 +184,33 @@ $loop->add( IO::Async::Stream->new(
 #$sel->add( $device_fd );
 #$sel->add( \*STDIN ); 
 
-# Server listen port
-my $port = 7777;
 
 # creating a listening socket
-my $socket = new IO::Socket::INET (
-    LocalHost => '0.0.0.0',
-    LocalPort => $port,
-    Proto => 'tcp',
-    Listen => 5,
-    Reuse => 1
-);
-$logger->info( "Listen port $port " ) ;
-$loop->add( IO::Async::Stream->new(
-   handle  => $socket,
-   on_read => sub {
-      my ( $self, $buffref, $eof ) = @_;
- 
-      while( $$buffref =~ s/^(.*)\n// ) {
-         print "read from telnetSocket $1\n";
-			exit;
-		 #$wsClient->send_text_frame( "SOCKET2 $1" ) ;
-      }
- 
-      return 0;
-   },
-) );
+#my $socket = new IO::Socket::INET (
+#    LocalHost => '0.0.0.0',
+#    LocalPort => $port,
+#    Proto => 'tcp',
+#    Listen => 5,
+#    Reuse => 1
+#);
+#$logger->info( "Listen port $port " ) ;
+#$loop->add( IO::Async::Stream->new(
+#   handle  => $socket,
+#   on_read => sub {
+#      my ( $self, $buffref, $eof ) = @_;
+# 
+#      while( $$buffref =~ s/^(.*)\n// ) {
+#         print "IO::Async::Stream: from telnetSocket $1\n";
+#		 #	exit;
+#		 #$wsClient->send_text_frame( "SOCKET2 $1" ) ;
+#      }
+# 
+#      return 0;
+#   },
+#) );
 
 #$loop->listen(
-#	service => "echo",
+#	service => "7777",
 #	socktype => "stream",
 #	on_stream => sub {
 #      	my ( undef, $stream ) = @_;
@@ -201,125 +223,52 @@ $loop->add( IO::Async::Stream->new(
 #	}
 #)->get;
 
-#my $listener = IO::Async::Listener->new(
-#   on_stream => sub {
-#      my ( undef, $stream ) = @_;
-# 
-#      $stream->configure(
-#         on_read => sub {
-#            my ( $self, $buffref, $eof ) = @_;
-#			print "Listener: on_read: $$buffref\n" ;
-#			# Echo the received data
-#            $self->write( $$buffref );
-#            $$buffref = "";
-#            return 0;
-#         },
-#         on_accept => sub {
-#            my ( $self, $buffref, $eof ) = @_;
-#            return 0;
-#		 },
-#      );
-# 
-#      $loop->add( $stream );
-#   },
-#);
+my $listener = IO::Async::Listener->new(
+   on_stream => sub {
+      my ( undef, $stream ) = @_;
  
-#die Dumper( $listener ) ;
-#$loop->add( $listener );
+	  # Register this telent client ;
+	  $clients{$stream} = $stream ;
 
-#$listener->listen(
-#   addr => {
-#      family   => "inet",
-#      socktype => "stream",
-#      port     => 7777,
-#      ip       => 'localhost',
-#   },
-#);
-#
-#$listener->listen(
-#   addr => { family => "inet", socktype => "stream", ip=> 'localhost', port=>8001 },
-#)->on_done( sub {
-#   my ( $listener ) = @_;
-#   my $socket = $listener->read_handle;
-# 
-#   print "Now listening on port ", $socket->sockport;
-#});
+	  # Send welcome message to telnet client
+	  $stream->write( "$welcome" ) ;
+      print "TELNET CLIENT CONNECTION \n" if( $runningInForeground == 1 ) ;
 
-# Wait for connections from telnet clients
-#$sel->add( $socket );
+      $stream->configure(
+         on_read => sub {
+            my ( $self, $buffref, $eof ) = @_;
+			
+			# Echo the received data to the telnet client
+            $self->write( $$buffref );
+
+			# Send to serialPort  
+		 	$serialPort->write( $$buffref."\n\r" ) ; 
+
+			# Send to the websocket
+		 	$wsClient->send_text_frame( "TELNET SOCKET: $$buffref" ) ;
+
+            print "TELNET SOCKET: $$buffref" if( $runningInForeground == 1 ) ;
+            $$buffref = "";
+            return 0;
+         },
+      );
+ 
+      $loop->add( $stream );
+   },
+);
+ 
+$loop->add( $listener );
+
+$listener->listen(
+   addr => {
+      family   => "inet",
+      socktype => "stream",
+      port     => $telnetListenPort,
+      ip       => 'localhost',
+   },
+)->get;
 
 $loop->run;
 
-# Register all socket connections from the netwerk 
-#my %clients;
 
-# Now, wait for available data.....
-#while(@ready = $sel->can_read) {
-#		# Data arrived. Check WHO is sending data (telnet client, Prologix/GPIB bus...
-#        foreach $fh (@ready) {
-#            if($fh == $socket) {
-#				$logger->info( "Incomming client connection on socket." ) ;
-#				#print "CONNECTION FROM NETWORK \n";
-#				# Accept the incomming connection
-#				my $client_socket = $socket->accept();
-#
-#				# Listen for data comming from this network socket
-#				$sel->add( $client_socket );
-#
-#				# Register this new network client socket
-#				$clients{$client_socket} = $client_socket;
-#
-#				# Send a welcome message to the socket-client
-#				$client_socket->send( "IO::Socket:$welcome" ) ;
-#				$logger->info( "Client accepted." ) ;
-#			} elsif( defined $clients{$fh} ) {
-#				# Data received from network socket (or EOF)
-#                $line=<$fh>;
-#				if( defined $line ) {
-#					$logger->info( "Data from client: $line" ) ;
-#
-#					# Echo back the received command to the telnet client
-#					$fh->send( "IO::Socket:$line" ) ;
-#					# The telnet client data is a Prologix/GPIB command.
-#					# Send the data to the device
-#					$rv = $gpib->send( { DEVICE_FD => $device_fd, COMMAND=>$line} ) ;
-#				} else {
-#					$logger->info( "Client left session" ) ;
-#					# EOF client-socket, remove from registration
-#					# Remove handle from select
-#					$sel->remove( $fh ) ;
-#					# Remove client from the registration
-#					delete $clients{$fh} ;
-#				}
-#			} elsif( $fh == $device_fd ) {
-#				$logger->info( "Data from Prologix/GPIB:  $device_description" ) ;
-#				$rv = $gpib->read( { DEVICE_FD => $device_fd } ) ;
-#				if( $rv->{STATUS} eq "OK" ) {
-#					foreach my $x (@{$rv->{DATA}}) {
-#						$logger->info( "value: $x" ) ;
-#						if( $runningInForeground == 1 ) { 
-#							print "$x\n";
-#						}
-#						# Send one value to EACH telnet client
-#						foreach my $c (keys %clients ) {
-#							$logger->info( "Send to client: $x" ) ;
-#							$clients{$c}->send( $x . CRLF ) ;
-#						}
-#					}
-#				}
-#			} elsif($fh == \*STDIN) {
-#				# NOTE: STDIN is not monitored because this is a background process!
-#				# Data received from STDIN (=keyboard)
-#                $line=<STDIN>;
-#				$logger->info( "Data from STDIN: $line" ) ;
-#
-##				# Echo back the received data
-#                print "STDIN: $line" ;
-#            }
-#            else {
-#				$logger->info( "ERROR: Huh?: " ) ;
-#                die "Huh? ERROR: \n" . Dumper( $fh) ;
-#            }
-#        }
-#}
 $logger->info( "Exit" ) ;
