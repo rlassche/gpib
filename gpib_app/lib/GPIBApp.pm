@@ -5,28 +5,54 @@ use Database;
 use Data::Dumper;
 use SDC::GPIB;
 #use Mojo::Transaction::WebSocket;
+#
+
+use Socket;
+use IO::Socket::INET;
+use IO::Select;
+
+my $port   = 7777;
+my $server = 'localhost';
 
 
 my $clients = {} ;
 # This method will run once at server start
 sub startup {
-  my $self = shift;
+	my $self = shift;
 
-  # Load configuration from hash returned by config file
-  my $config = $self->plugin('Config');
+	my $socket;
 
-  # Configure the application
-  $self->secrets($config->{secrets});
+	# Load configuration from hash returned by config file
+	my $config = $self->plugin('Config');
 
-# load and configure
-  $self->plugin('SecureCORS');
-  $self->plugin('SecureCORS', { max_age => undef});
-  # set app-wide CORS defaults
-  $self->routes->to('cors.credentials'=>1);
+	# Configure the application
+	$self->secrets($config->{secrets});
+
+	# load and configure
+	$self->plugin('SecureCORS');
+	$self->plugin('SecureCORS', { max_age => undef});
+	# set app-wide CORS defaults
+	$self->routes->to('cors.credentials'=>1);
 
 
-  $self->app->log->info( 'dsn ' . $config->{dsn} ) ;
-  $self->plugin( 'database', {
+	# create the socket, connect to the port
+#    socket($socket,PF_INET,SOCK_STREAM,(getprotobyname('tcp'))[2])
+#       or die "Can't create a socket $!\n";
+#    connect( $socket, pack_sockaddr_in($port, inet_aton($server)))
+#       or die "Can't connect to port $port! \n";
+#    $socket->autoflush;
+
+#	my $s = IO::Select->new() ;
+
+#	$s->add( $socket );
+#	$self->app->helper( SOCKETHLP => sub {
+#            return { SOCKET => $s }
+#        }) ;
+
+
+
+	$self->app->log->info( 'dsn ' . $config->{dsn} ) ;
+	$self->plugin( 'database', {
                      dsn => $config->{dsn},
                      username => $config->{user},
                      password => $config->{password},
@@ -40,17 +66,17 @@ sub startup {
                      helper => 'db'
                 });
 
-  my $db = new Database(
+	my $db = new Database(
                      DBH => $self->db,
                      LOG4DB => 1,
                      LOG_LEVEL=>"FATAL",
                      LOG_CLASS => "testDatabase" );
 
-  my $gpib = new SDC::GPIB( DATABASE => $db ) ;
-  #$self->app->log->info( 'gpib ' . Dumper( $gpib ) ) ;
+	my $gpib = new SDC::GPIB( DATABASE => $db ) ;
+	#$self->app->log->info( 'gpib ' . Dumper( $gpib ) ) ;
 
-  my $devices = { };
-  $self->app->helper( DEVICESHLP => sub {
+	my $devices = { };
+	$self->app->helper( DEVICESHLP => sub {
             return { DEVICES => $devices }
         }) ;
 
