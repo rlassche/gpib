@@ -122,7 +122,6 @@ my $loop = IO::Async::Loop->new;
 my $wsClient = Net::Async::WebSocket::Client->new(
    on_text_frame => sub {
       my ( $self, $frame ) = @_;
-<<<<<<< HEAD
 	  #
 	  # Distribute WS data to:
 	  # 	STDOUT
@@ -134,8 +133,6 @@ my $wsClient = Net::Async::WebSocket::Client->new(
 			print "Websocket data->TELNET Client: $frame\n" ;
 			$clients{$s}->write( $frame ."\n\r> " ) ;
 	  }
-=======
->>>>>>> develop
 	  
 	  my $h = $jsonizer->decode( $frame ) ;
 	  if( $h->{message} =~ /prologix-usb:/ ) {
@@ -143,11 +140,8 @@ my $wsClient = Net::Async::WebSocket::Client->new(
 		 #print "h->{message}: " . Dumper( $h->{message} ) ;
 	  	 my $h3 = $jsonizer->decode( $h->{message} ) ;
 		 my @args=split( ':', $h3->{message} );
-		 print "From ws->USB: $args[1] \n" ;
 		 $serialPort->write( $args[1]."\n\r" ) ; 
 		 #die 'h3: ' . Dumper( $h3->{message} ) ;
-	  } else {
-      	 print "From ws->STDOUT: $frame\n" ;
 	  }
 	  #print "MESSAGE: $h->{message} \n" ;
    },
@@ -163,9 +157,9 @@ $loop->add( IO::Async::Stream->new_for_stdin(
       while( $$buffref =~ s/^(.*)\n// ) {
          print "You typed a line $1\n" ;
 		 try {
-			print "Send to ws\n" ;
+			print "Send to ws: $1\n" ;
 			# Send data to websocket
-		 	$wsClient->send_text_frame( "STDIN: $1" ) if( defined $wsEndpoint );
+		 	$wsClient->send_text_frame( "STDIN: $1" ) ;
 		 } catch {
 			print "ERROR: Cannot send to websocket\n" ;
 		 };
@@ -197,7 +191,8 @@ try {
 $wsClient->connect(
    url => $wsEndpoint,
 )->then( sub {
-    $wsClient->send_text_frame( "Hello, world from $0!\n" );
+	$logger->info( "Send welcome text to WS" ) ;
+    $wsClient->send_text_frame( "$welcome\n" );
 })->get;
 } catch {
 	if( ! defined $wsEndpoint ) {
@@ -218,7 +213,8 @@ $loop->add( IO::Async::Stream->new(
          print "$1\n" if( $runningInForeground == 1 ) ;
 		 # Send value to the websocket connection
 		 try {
-		 	$wsClient->send_text_frame( $1 ) if defined $wsEndpoint;
+			print "GPIB data to WS: $1\n" ;
+		 	$wsClient->send_text_frame( $1 ) ;
 		 } catch {
 			print "ERROR: Cannot write to websocket\n" ;
 		 };
@@ -241,10 +237,13 @@ my $listener = IO::Async::Listener->new(
  
 	  # Register this telent client ;
 	  $clients{$stream} = $stream ;
+	  $logger->info( "TELNET client connected." ) ;
 
-	  # Send welcome message to telnet client
+	  # Send welcome message to that telnet client
 	  $stream->write( "$welcome\n> " ) ;
+
       print "TELNET CLIENT CONNECTION \n" if( $runningInForeground == 1 ) ;
+ 	  $wsClient->send_text_frame( "TELNET client connected." ) ;
 
       $stream->configure(
          on_read => sub {
