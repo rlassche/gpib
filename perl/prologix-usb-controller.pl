@@ -122,6 +122,7 @@ my $loop = IO::Async::Loop->new;
 my $wsClient = Net::Async::WebSocket::Client->new(
    on_text_frame => sub {
       my ( $self, $frame ) = @_;
+<<<<<<< HEAD
 	  #
 	  # Distribute WS data to:
 	  # 	STDOUT
@@ -133,6 +134,8 @@ my $wsClient = Net::Async::WebSocket::Client->new(
 			print "Websocket data->TELNET Client: $frame\n" ;
 			$clients{$s}->write( $frame ."\n\r> " ) ;
 	  }
+=======
+>>>>>>> develop
 	  
 	  my $h = $jsonizer->decode( $frame ) ;
 	  if( $h->{message} =~ /prologix-usb:/ ) {
@@ -140,8 +143,11 @@ my $wsClient = Net::Async::WebSocket::Client->new(
 		 #print "h->{message}: " . Dumper( $h->{message} ) ;
 	  	 my $h3 = $jsonizer->decode( $h->{message} ) ;
 		 my @args=split( ':', $h3->{message} );
+		 print "From ws->USB: $args[1] \n" ;
 		 $serialPort->write( $args[1]."\n\r" ) ; 
 		 #die 'h3: ' . Dumper( $h3->{message} ) ;
+	  } else {
+      	 print "From ws->STDOUT: $frame\n" ;
 	  }
 	  #print "MESSAGE: $h->{message} \n" ;
    },
