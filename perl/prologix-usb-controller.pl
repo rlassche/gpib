@@ -41,7 +41,8 @@ my $runningInForeground=0;
 
 my $WSHOST='localhost';
 my $WSPORT=3000;
-my $wsEndpoint = "ws://$WSHOST:$WSPORT/echo";
+#my $wsEndpoint = "ws://$WSHOST:$WSPORT/echo";
+my $wsEndpoint ;
 
 sub usage {
 	print "USAGE:\n" ;
@@ -79,7 +80,7 @@ if( $runningInForeground == 0 ) {
 		exit 0 ;
 	}
 } else {
-	print "prologix-usb-controller.pl is running as process $pid \n" ;
+	print "prologix-usb-controller.pl is running as process $pid\n" ;
 	print "Listen on port $telnetHost:$telnetListenPort\n" ;
 }
 
@@ -121,7 +122,17 @@ my $loop = IO::Async::Loop->new;
 my $wsClient = Net::Async::WebSocket::Client->new(
    on_text_frame => sub {
       my ( $self, $frame ) = @_;
-      #print "on_text_frame: $frame\n" ;
+	  #
+	  # Distribute WS data to:
+	  # 	STDOUT
+	  # 	Telnet clients
+	  # 	Prologix-usb if message contains a command
+	  #
+      print "Websocket data->STDOUT: $frame\n" if( $runningInForeground ) ;
+	  foreach my $s (keys %clients) {
+			print "Websocket data->TELNET Client: $frame\n" ;
+			$clients{$s}->write( $frame ."\n\r> " ) ;
+	  }
 	  
 	  my $h = $jsonizer->decode( $frame ) ;
 	  if( $h->{message} =~ /prologix-usb:/ ) {
@@ -146,8 +157,9 @@ $loop->add( IO::Async::Stream->new_for_stdin(
       while( $$buffref =~ s/^(.*)\n// ) {
          print "You typed a line $1\n" ;
 		 try {
+			print "Send to ws\n" ;
 			# Send data to websocket
-		 	$wsClient->send_text_frame( "STDIN: $1" ) ;
+		 	$wsClient->send_text_frame( "STDIN: $1" ) if( defined $wsEndpoint );
 		 } catch {
 			print "ERROR: Cannot send to websocket\n" ;
 		 };
@@ -155,8 +167,8 @@ $loop->add( IO::Async::Stream->new_for_stdin(
 		 $rv = $serialPort->write( $1."\n\r" ) ; 
 		 my $count=0;
 		 foreach my $s (keys %clients) {
-			print "SEND TO TELNET CLIENT: $1\n" ;
-			$clients{$s}->write( $1 ) ;
+			print "STDIN->TELNET Client: $1\n" ;
+			$clients{$s}->write( $1 ."\n\r> " ) ;
 		 }
       }
  
@@ -165,7 +177,7 @@ $loop->add( IO::Async::Stream->new_for_stdin(
 ) );
 }
 # Welcome message for a telnet-connection client
-my $welcome = "prologix-usb-controller.pl - V1.0\n";
+my $welcome = "prologix-usb-controller.pl - V1.0";
 $logger->info( $welcome ) ;
 
 #############################################################
@@ -182,7 +194,12 @@ $wsClient->connect(
     $wsClient->send_text_frame( "Hello, world from $0!\n" );
 })->get;
 } catch {
-	print "ERROR: Cannot connect to websocket: $wsEndpoint\n" ;
+	if( ! defined $wsEndpoint ) {
+		print "WARNING: Websocket endpoint not defined\n"; 
+	} else {
+		print "ERROR: Cannot connect to websocket: $wsEndpoint\n$!\n" ;
+		exit;
+	}
 }
  
 $loop->add( IO::Async::Stream->new(
@@ -194,12 +211,17 @@ $loop->add( IO::Async::Stream->new(
 		 # In forground mode: echo value to stdout
          print "$1\n" if( $runningInForeground == 1 ) ;
 		 # Send value to the websocket connection
-		 $wsClient->send_text_frame( $1 ) ;
+		 try {
+		 	$wsClient->send_text_frame( $1 ) if defined $wsEndpoint;
+		 } catch {
+			print "ERROR: Cannot write to websocket\n" ;
+		 };
 
 		 # Send the value to all telnet clients
 		 foreach my $s (keys %clients) {
 			# Send to telnet clients
-			$clients{$s}->write( $1."\n\r" ) ;
+			print "Send to telnet client\n" ;
+			$clients{$s}->write( $1."\n> " ) ;
 		 }
       }
  
@@ -215,7 +237,7 @@ my $listener = IO::Async::Listener->new(
 	  $clients{$stream} = $stream ;
 
 	  # Send welcome message to telnet client
-	  $stream->write( "$welcome" ) ;
+	  $stream->write( "$welcome\n> " ) ;
       print "TELNET CLIENT CONNECTION \n" if( $runningInForeground == 1 ) ;
 
       $stream->configure(
@@ -230,12 +252,22 @@ my $listener = IO::Async::Listener->new(
 
 			# Send to the websocket
 			try {
-		 	$wsClient->send_text_frame( "TELNET SOCKET: $$buffref" ) ;
+		 	$wsClient->send_text_frame( "TELNET data->websocket: $$buffref" ) 
+													if( defined $wsEndpoint );
 			} catch {
 				print "Cannot send to WEBSOCKET\n" ;
 		 	};
+		 	foreach my $s (keys %clients) {
+				if( "$s" eq "$stream" ) {
+					#print "YES, DIT IS AFZENDER\n" ;
+					$clients{$s}->write( "> " ) ;
+					next;
+				}
+				#print "TELNET data->TELNET CLIENT: $$buffref\n" ;
+				$clients{$s}->write( $$buffref . "> ") ;
+		 	}
 
-            print "TELNET SOCKET: $$buffref" if( $runningInForeground == 1 ) ;
+            print "TELNET data->STDOUT $$buffref" if( $runningInForeground == 1 ) ;
             $$buffref = "";
             return 0;
          },
@@ -258,6 +290,8 @@ $listener->listen(
 )->get;
 } catch {
 	print "ERROR: Cannot create listen socket $telnetHost:$telnetListenPort\n";
+	exit 1;
+	
 };
 
 $loop->run;
