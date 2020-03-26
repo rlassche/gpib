@@ -28,7 +28,7 @@ use Device::SerialPort;
 
 my $s = IO::Select->new() ;
 $s->add( \*STDIN ); 
-my $usbDevice='/dev/ttyUSB0' ;
+my $usbDevice='/dev/ttyUSB3' ;
 
 my $port = Device::SerialPort->new($usbDevice);
 $port->baudrate(9600); # Configure this to match your device
