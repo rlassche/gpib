@@ -51,5 +51,8 @@ testem.log
 .DS_Store
 Thumbs.db
 
-dotnet/serial/obj/Debug/
-dotnet/serial/bin/
+
+dnPrologix/dnPrologix.test/bin/
+dnPrologix/dnPrologix.test/obj
+dnPrologix/dnPrologix.console/obj/
+dnPrologix/dnPrologix.serial/obj/
