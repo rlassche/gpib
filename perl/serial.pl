@@ -27,47 +27,20 @@ use IO::Handle;
 use Device::SerialPort;
 use File::Slurp qw( read_file);
 
+$|=1;
 my $file="1998_init.cmd";
 sub  trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
 my $port;
-my %RACAL_DANA = (
-	"SRS" => { DESCRIPTION=> "SRS command",
-		   ARGS => { "7",  "8" },
-	},
-	"F" =>   { DESCRIPTION=> "FREQuency command Channel B",
-		   ARGS => { "A",  "B" },
-		 },
-	"Q" =>   { DESCRIPTION=> "Q command Channel B",
-		   ARGS => { "A",  "B" },
-		 }
-);
 
 sub send2Device
 {
 	my $cmd= shift ;
-	my @keys = keys %RACAL_DANA;
-	print "TEST: $cmd\n";
 	$port->write( $cmd."\n\r" ) ; 
-	my $p ;
-	return $p ;
-	while( @keys ) {
-		my $k=pop( @keys) ;
-		print "k=$k, cmd=$cmd\n";
-		if( $cmd =~ /$k/ ) {
-		  my $arg = $';
-		  print "FOUND: k=$k: arg=$arg\n";
-		  $port->write( $cmd."\n\r" ) ; 
-		  return $RACAL_DANA{$k};
-		}
-	}
-	print "$cmd not implemented" if( ! defined $p ) ;
-	return $p;
 }
 
 sub initDevice
 {
 	my $file=shift;
-	print "initDevice: $file\n";
 	
 	my @f;
 	open FD, $file ;
@@ -75,22 +48,16 @@ sub initDevice
 	close( FD ) ;
 	for( my $i=0; $i<@f; $i++ ) {
 		my $l=trim( $f[$i] );
-		print "# $l\n";
 		if( $l =~/^#/ || "$l" eq "" ) {
-			print "NEXT ($l)\n";
 			next;
 		}
-		#print "SEND SEND--> $l****\n";
+		if( $l =~ /^\!/ ) {
+			# my( $count, $buffer ) = $port->read( 1040 ) ; 
+			next;
+		}
 		my $r=send2Device( "$l" ) ;
 	}
 }
-#die "BYE";
-#die Dumper( \@f ) ;
-#exit;
-my $r;
-#$r=send2Device( "SRS7" ) ;
-#$r=send2Device( "FA" ) ;
-#die Dumper( $r ) ;
 
 my $s = IO::Select->new() ;
 $s->add( \*STDIN ); 
@@ -102,84 +69,61 @@ $port->databits(8);
 $port->parity("none");
 $port->stopbits(1);
 $s->add( $port->{HANDLE} ); 
-print "Add " . Dumper( $port->{HANDLE} ) ;
 
-#my $command="SRS7";
-#$port->write( $command."\n\r" ) ; 
-#send2Device( $command ) ;
 
-#$command="FB";
-#$port->write( $command."\n\r" ) ; 
-#$command="Q7";
-#$port->write( $command."\n\r" ) ; 
-#send2Device( $command ) ;
-
-#$command="RGS";
-#$port->write( $command."\n\r" ) ; 
-
-print "FILE=$file\n";
-initDevice( $file ) ;
-
-my $timeout=20;
+my $timeout=120;
 my @ready;
 my $fh;
 my $line;
 my @a=();
 my $rest='';
 my $p;
+initDevice( $file ) ;
+my $buffer="";
 while( 1 ) {
-	#print "Waiting.... " ;
 	@ready = $s->can_read( $timeout );
-	print "\n" ;
 	#print "After can_read\n" ;
+	my $full_entries=0;
 	foreach $fh (@ready) {
 			#print "foreach: " . Dumper( $fh ) . "\n";
             if($fh == \*STDIN) {
                 $line=<STDIN>;
                 #print "STDIN: $line\n" ;
-				$port->write( $line."\n\r" ) ; 
+				send2Device( $line ) ;
             }
             elsif($fh eq $port->{HANDLE} ) {
 				#print "Read from GPIB\n" ;
-				my( $count, $buffer ) = $port->read( 1040 ) ; 
-				$buffer = $rest . $buffer;
-				
-				if( $buffer =~ /\r\n/ ) {
-					@a = split( /\r\n/, $buffer ) ;
-					$rest='';
-					#print "CRLF found in buffer. SPLIT ". Dumper( \@a ) ;; 
+				my( $count, $tmp_buffer ) = $port->read( 1040 ) ; 
+				if( $count < 1 ) { 
+					die "COUNT < 1"; 
+				}
+				#print "BUILD BUFFER: $buffer ------ $tmp_buffer\n";
+				$buffer .= $tmp_buffer;
+				@a=();
+				@a = split( /\r\n/, $buffer ) ;
+				$full_entries = @a; 
+				#print "full_entries: $full_entries\n ";
+				if( substr( $buffer, -2 ) ne "\r\n" ) {
+					$full_entries -= 1 ; 
+					#print "NOT END FOUND, AANTAL : ". $full_entries;
+					$buffer=$a[$full_entries];
+					#print "COPY LEFT OVER TO BUFFER: ####$buffer####\n";
 				} else {
-					@a =() ;
+					#print "END FOUND AT END, AANTAL : ". $full_entries ;
+					$buffer="" ;
 				}
-				my $last2bytes=substr( $buffer, -2 ) ;
-				if( $last2bytes ne "\r\n" ) {
-					#print "NO CRLF at end of string!\n" ;
-					if( @a > 0 ) {
-                    	#print "DO the POP:\n" ;
-                    	$p= pop( @a ) ;
-						
-						
-                    	if( defined $p ) {
-                        	#print "NEW REST=: $p. NEW REST LENGTH:".
-                            #    length( $p ) . "\n"  ;
-                        	$rest = $p;
-                    	}
-                	} else {
-                    	$rest = $buffer ;
-						#print "Added buffer to rest: $rest\n" ;
-                	}
-
-				}
-				if( @a > 0 ) {
-					foreach my $x (@a) {
-						print "$x\n" ;
+				
+				#print "\nFOREACH: $full_entries:" . "\n";
+				for( my $j=0; $j<$full_entries; $j++ ) {
+					if( $a[$j] =~ /\r/ ) { 
+						die "N found";
 					}
-					#print Dumper( \@a ) ;
+					my $len = length( $a[$j] ) ;
+					print "$a[$j]\n" ;
 				}
 			}
             else {
-                print "Hu?\n" . Dumper( $fh ) ;
-exit;
+                die "Hu?\n" . Dumper( $fh ) ;
             }
         }
 }
