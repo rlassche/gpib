@@ -11,7 +11,7 @@ namespace dnPrologix.console
         static void Main(string[] args)
         {
             var g = new GPIB_USB("COM5", 9600);
-            _serialPort = g._serialPort;
+            _serialPort = g.serialPort;
         }
     }
 }
