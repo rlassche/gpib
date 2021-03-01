@@ -115,9 +115,9 @@ while( 1 ) {
 				
 				#print "\nFOREACH: $full_entries:" . "\n";
 				for( my $j=0; $j<$full_entries; $j++ ) {
-					if( $a[$j] =~ /\r/ ) { 
-						die "N found";
-					}
+					#if( $a[$j] =~ /\r/ ) { 
+					#	die "N found";
+					#}
 					my $len = length( $a[$j] ) ;
 					print "$a[$j]\n" ;
 				}

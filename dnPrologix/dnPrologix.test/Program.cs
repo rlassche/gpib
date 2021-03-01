@@ -13,7 +13,7 @@ public class PortChat
     public static void Main()
     {
 
-        var g = new GPIB_USB("COM5", 9600);
+        var g = new GPIB_USB("/dev/ttyUSB0", 9600);
         _serialPort = g.serialPort;
         //string name;
         string message;
@@ -22,7 +22,7 @@ public class PortChat
         // Read from the COM-port
         // Thread readThread = new Thread(g.Read);
         Thread readThread = new Thread( new ThreadStart( g.Read ) );
-        //_continue = true;
+        _continue = true;
         readThread.Start();
 
         // Create a new SerialPort object with default settings.
@@ -51,10 +51,14 @@ public class PortChat
 
         Console.WriteLine("Type QUIT to exit");
 
+                Console.WriteLine($"ROB: before while ");
         while (_continue)
         {
+	
+                Console.WriteLine($"ROB: waiting for readline input");
             message = Console.ReadLine();
-
+                Console.WriteLine($"ROB: read message {message}");
+		
             if (stringComparer.Equals("quit", message))
             {
                 _continue = false;
@@ -67,6 +71,7 @@ public class PortChat
                 //    String.Format("<{0}>: {1}", name, message));
             }
         }
+        Console.WriteLine($"ROB: after while ");
 
         readThread.Join();
         _serialPort.Close();

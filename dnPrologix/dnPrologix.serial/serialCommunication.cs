@@ -15,7 +15,8 @@ namespace dnPrologix.serial
         {
             serialPort = new SerialPort();
 
-            serialPort.PortName = portName.ToLower();
+            //serialPort.PortName = portName.ToLower();
+            serialPort.PortName = portName;
             serialPort.BaudRate = baudRate;
             serialPort.Parity = (Parity)Enum.Parse(typeof(Parity), "0", true);
             serialPort.DataBits = 8;
