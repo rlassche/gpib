@@ -1,5 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
+ <ItemGroup>
+    <ProjectReference Include="..\dnPrologix.serial\dnPrologix.serial.csproj" />
+  </ItemGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>

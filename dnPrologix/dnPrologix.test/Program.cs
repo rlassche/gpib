@@ -1,9 +1,9 @@
-﻿// Use this code inside a project created with the Visual C# > Windows Desktop > Console Application template.
-// Replace the code in Program.cs with this code.
-
+﻿// TEST PROGRAM FOR EXPERIMENTS
+//
 using System;
 using System.IO.Ports;
 using System.Threading;
+using dnPrologix.serial;
 
 public class PortChat
 {
@@ -12,12 +12,21 @@ public class PortChat
 
     public static void Main()
     {
-        string name;
+
+        var g = new GPIB_USB("COM5", 9600);
+        _serialPort = g.serialPort;
+        //string name;
         string message;
         StringComparer stringComparer = StringComparer.OrdinalIgnoreCase;
-        Thread readThread = new Thread(Read);
+        //Thread readThread = new Thread(Read);
+        // Read from the COM-port
+        // Thread readThread = new Thread(g.Read);
+        Thread readThread = new Thread( new ThreadStart( g.Read ) );
+        //_continue = true;
+        readThread.Start();
 
         // Create a new SerialPort object with default settings.
+        /*
         _serialPort = new SerialPort();
 
         // Allow the user to set the appropriate properties.
@@ -27,17 +36,18 @@ public class PortChat
         _serialPort.DataBits = SetPortDataBits(_serialPort.DataBits);
         _serialPort.StopBits = SetPortStopBits(_serialPort.StopBits);
         _serialPort.Handshake = SetPortHandshake(_serialPort.Handshake);
+        */
 
         // Set the read/write timeouts
+        /*
         _serialPort.ReadTimeout = 500;
         _serialPort.WriteTimeout = 500;
+        */
 
-        _serialPort.Open();
-        _continue = true;
-        readThread.Start();
+        // _serialPort.Open();
 
-        Console.Write("Name: ");
-        name = Console.ReadLine();
+        // Console.Write("Name: ");
+        // name = Console.ReadLine();
 
         Console.WriteLine("Type QUIT to exit");
 
@@ -51,8 +61,8 @@ public class PortChat
             }
             else
             {
-                Console.WriteLine( $"ROB: Sending {message}");
-                _serialPort.WriteLine( message );
+                Console.WriteLine($"ROB: Sending {message}");
+                _serialPort.WriteLine(message);
                 //_serialPort.WriteLine(
                 //    String.Format("<{0}>: {1}", name, message));
             }
@@ -62,6 +72,7 @@ public class PortChat
         _serialPort.Close();
     }
 
+/*
     public static void Read()
     {
         while (_continue)
@@ -74,8 +85,10 @@ public class PortChat
             catch (TimeoutException) { }
         }
     }
+    */
 
     // Display Port values and prompt user to enter a port.
+    /*
     public static string SetPortName(string defaultPortName)
     {
         string portName;
@@ -95,7 +108,9 @@ public class PortChat
         }
         return portName;
     }
+    */
     // Display BaudRate values and prompt user to enter a value.
+    /*
     public static int SetPortBaudRate(int defaultPortBaudRate)
     {
         string baudRate;
@@ -108,11 +123,13 @@ public class PortChat
             baudRate = defaultPortBaudRate.ToString();
         }
 
-    
+
         return int.Parse(baudRate);
     }
+    */
 
     // Display PortParity values and prompt user to enter a value.
+    /*
     public static Parity SetPortParity(Parity defaultPortParity)
     {
         string parity;
@@ -133,7 +150,9 @@ public class PortChat
 
         return (Parity)Enum.Parse(typeof(Parity), parity, true);
     }
+    */
     // Display DataBits values and prompt user to enter a value.
+    /*
     public static int SetPortDataBits(int defaultPortDataBits)
     {
         string dataBits;
@@ -148,8 +167,10 @@ public class PortChat
 
         return int.Parse(dataBits.ToUpperInvariant());
     }
+    */
 
     // Display StopBits values and prompt user to enter a value.
+    /*
     public static StopBits SetPortStopBits(StopBits defaultPortStopBits)
     {
         string stopBits;
@@ -164,13 +185,15 @@ public class PortChat
          "raises an ArgumentOutOfRangeException. \n (Default: {0}):", defaultPortStopBits.ToString());
         stopBits = Console.ReadLine();
 
-        if (stopBits == "" )
+        if (stopBits == "")
         {
             stopBits = defaultPortStopBits.ToString();
         }
 
         return (StopBits)Enum.Parse(typeof(StopBits), stopBits, true);
     }
+    */
+    /*
     public static Handshake SetPortHandshake(Handshake defaultPortHandshake)
     {
         string handshake;
@@ -191,4 +214,5 @@ public class PortChat
 
         return (Handshake)Enum.Parse(typeof(Handshake), handshake, true);
     }
+    */
 }
