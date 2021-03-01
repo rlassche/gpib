@@ -1,22 +1,25 @@
 ﻿using System;
 using System.IO.Ports;
+using System.Threading;
 
 namespace dnPrologix.serial
 {
     public class GPIB_USB
     {
+        public string SharedData;
         private bool _continue;
 
         // _serialPort is used for READ/WRITE bytes to and from the COM-port
         public SerialPort serialPort { get; }
+        public  Thread readThread {set; get;}
 
         // Constructor that takes no arguments:
         public GPIB_USB(string portName, int baudRate)
         {
             serialPort = new SerialPort();
 
-            //serialPort.PortName = portName.ToLower();
-            serialPort.PortName = portName;
+            serialPort.PortName = portName.ToLower();
+            //serialPort.PortName = portName;
             serialPort.BaudRate = baudRate;
             serialPort.Parity = (Parity)Enum.Parse(typeof(Parity), "0", true);
             serialPort.DataBits = 8;
@@ -27,11 +30,50 @@ namespace dnPrologix.serial
             serialPort.ReadTimeout = 500;
             serialPort.WriteTimeout = 500;
 
-            serialPort.Open();
-            _continue = true ;
-        }
+            try
+            {
+                serialPort.Open();
+                _continue = true;
 
-        // Read data from the serial device
+
+                try
+                {
+                    readThread = new Thread(new ThreadStart(Read));
+                    //_continue = true;
+                    readThread.Start();
+                    // readThread.Join();
+                }
+                catch
+                {
+                    Console.WriteLine($"ERROR: ");
+                    return;
+                }
+            }
+            catch
+            {
+                var msg = $"Cannot open serial port {portName}";
+                throw new Exception(msg);
+            }
+            initPrologix();
+        }
+        void initPrologix()
+        {
+
+            Console.WriteLine( "Set mode to CONTROLLER ");
+            serialPort.WriteLine( "++mode 1");
+
+            Console.WriteLine( "Reset Controller ");
+            serialPort.WriteLine( "++rst");
+
+            Console.WriteLine( "Issue Device Clear ");
+            serialPort.WriteLine( "++clr");
+
+            // EOS terminator - 0:CR+LF, 1:CR, 2:LF, 3:None
+            Console.WriteLine( "Set EOS to 0 (=CR+LF)");
+            serialPort.WriteLine( "++eos 0");
+
+            //serialPort.WriteLine( "FB");
+        }
         public void Read()
         {
             while (_continue)
@@ -45,6 +87,13 @@ namespace dnPrologix.serial
                     Console.WriteLine(message);
                 }
                 catch (TimeoutException) { }
+                catch (System.OperationCanceledException)
+                {
+                    var msg = "Joh, problem with serialPort";
+                    Console.WriteLine(msg);
+                    _continue = false;
+                    throw new Exception(msg);
+                }
             }
         }
     }

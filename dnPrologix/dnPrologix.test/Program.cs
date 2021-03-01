@@ -4,61 +4,78 @@ using System;
 using System.IO.Ports;
 using System.Threading;
 using dnPrologix.serial;
-
+using System.Runtime.InteropServices;
 public class PortChat
 {
     static bool _continue;
     static SerialPort _serialPort;
 
+    static string defaultSerialPort;
+
     public static void Main()
     {
 
-        var g = new GPIB_USB("/dev/ttyUSB0", 9600);
-        _serialPort = g.serialPort;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            defaultSerialPort = "/dev/ttyUSB0";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            defaultSerialPort = "COM5";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            defaultSerialPort = "/dev/ttyUSB0";
+        }
+        else
+        {
+            Console.WriteLine("What OSPlatform???");
+        }
+
+        GPIB_USB g = null;
+        try
+        {
+            g = new GPIB_USB(defaultSerialPort, 9600);
+            _serialPort = g.serialPort;
+        }
+        catch (System.Exception e)
+        {
+            Console.WriteLine($"ERROR: {e.Message}");
+            // throw new Exception( e.Message );
+            return;
+        }
         //string name;
         string message;
         StringComparer stringComparer = StringComparer.OrdinalIgnoreCase;
         //Thread readThread = new Thread(Read);
         // Read from the COM-port
         // Thread readThread = new Thread(g.Read);
-        Thread readThread = new Thread( new ThreadStart( g.Read ) );
-        _continue = true;
-        readThread.Start();
-
-        // Create a new SerialPort object with default settings.
         /*
-        _serialPort = new SerialPort();
-
-        // Allow the user to set the appropriate properties.
-        _serialPort.PortName = SetPortName(_serialPort.PortName);
-        _serialPort.BaudRate = SetPortBaudRate(_serialPort.BaudRate);
-        _serialPort.Parity = SetPortParity(_serialPort.Parity);
-        _serialPort.DataBits = SetPortDataBits(_serialPort.DataBits);
-        _serialPort.StopBits = SetPortStopBits(_serialPort.StopBits);
-        _serialPort.Handshake = SetPortHandshake(_serialPort.Handshake);
+        Thread readThread = null;
+        try
+        {
+            readThread = new Thread(new ThreadStart(g.Read));
+            _continue = true;
+            readThread.Start();
+        }
+        catch
+        {
+            Console.WriteLine($"ERROR: ");
+            return;
+        }
         */
-
-        // Set the read/write timeouts
-        /*
-        _serialPort.ReadTimeout = 500;
-        _serialPort.WriteTimeout = 500;
-        */
-
-        // _serialPort.Open();
-
-        // Console.Write("Name: ");
-        // name = Console.ReadLine();
 
         Console.WriteLine("Type QUIT to exit");
 
-                Console.WriteLine($"ROB: before while ");
+        Console.WriteLine($"ROB: before while ");
+        _continue=true;
         while (_continue)
         {
-	
-                Console.WriteLine($"ROB: waiting for readline input");
+
+            Console.WriteLine($"ROB: waiting for readline input");
             message = Console.ReadLine();
-                Console.WriteLine($"ROB: read message {message}");
-		
+            Console.WriteLine($"ROB: read message {message}");
+
             if (stringComparer.Equals("quit", message))
             {
                 _continue = false;
@@ -66,158 +83,28 @@ public class PortChat
             else
             {
                 Console.WriteLine($"ROB: Sending {message}");
-                _serialPort.WriteLine(message);
-                //_serialPort.WriteLine(
-                //    String.Format("<{0}>: {1}", name, message));
+                try
+                {
+
+                    _serialPort.WriteLine(message);
+                }
+                catch
+                {
+                    Console.WriteLine($"He, error in sending to {defaultSerialPort}");
+                    _continue = false;
+                }
             }
         }
         Console.WriteLine($"ROB: after while ");
-
-        readThread.Join();
+        try
+        {
+           // g.readThread.Join();
+           // readThread.Join();
+        }
+        catch
+        {
+            Console.WriteLine("Catch van Join");
+        }
         _serialPort.Close();
     }
-
-/*
-    public static void Read()
-    {
-        while (_continue)
-        {
-            try
-            {
-                string message = _serialPort.ReadLine();
-                Console.WriteLine(message);
-            }
-            catch (TimeoutException) { }
-        }
-    }
-    */
-
-    // Display Port values and prompt user to enter a port.
-    /*
-    public static string SetPortName(string defaultPortName)
-    {
-        string portName;
-
-        Console.WriteLine("Available Ports:");
-        foreach (string s in SerialPort.GetPortNames())
-        {
-            Console.WriteLine("   {0}", s);
-        }
-
-        Console.Write("Enter COM port value (Default: {0}): ", defaultPortName);
-        portName = Console.ReadLine();
-
-        if (portName == "" || !(portName.ToLower()).StartsWith("com"))
-        {
-            portName = defaultPortName;
-        }
-        return portName;
-    }
-    */
-    // Display BaudRate values and prompt user to enter a value.
-    /*
-    public static int SetPortBaudRate(int defaultPortBaudRate)
-    {
-        string baudRate;
-
-        Console.Write("Baud Rate(default:{0}): ", defaultPortBaudRate);
-        baudRate = Console.ReadLine();
-
-        if (baudRate == "")
-        {
-            baudRate = defaultPortBaudRate.ToString();
-        }
-
-
-        return int.Parse(baudRate);
-    }
-    */
-
-    // Display PortParity values and prompt user to enter a value.
-    /*
-    public static Parity SetPortParity(Parity defaultPortParity)
-    {
-        string parity;
-
-        Console.WriteLine("Available Parity options:");
-        foreach (string s in Enum.GetNames(typeof(Parity)))
-        {
-            Console.WriteLine("   {0}", s);
-        }
-
-        Console.Write("Enter Parity value (Default: {0}):", defaultPortParity.ToString(), true);
-        parity = Console.ReadLine();
-
-        if (parity == "")
-        {
-            parity = defaultPortParity.ToString();
-        }
-
-        return (Parity)Enum.Parse(typeof(Parity), parity, true);
-    }
-    */
-    // Display DataBits values and prompt user to enter a value.
-    /*
-    public static int SetPortDataBits(int defaultPortDataBits)
-    {
-        string dataBits;
-
-        Console.Write("Enter DataBits value (Default: {0}): ", defaultPortDataBits);
-        dataBits = Console.ReadLine();
-
-        if (dataBits == "")
-        {
-            dataBits = defaultPortDataBits.ToString();
-        }
-
-        return int.Parse(dataBits.ToUpperInvariant());
-    }
-    */
-
-    // Display StopBits values and prompt user to enter a value.
-    /*
-    public static StopBits SetPortStopBits(StopBits defaultPortStopBits)
-    {
-        string stopBits;
-
-        Console.WriteLine("Available StopBits options:");
-        foreach (string s in Enum.GetNames(typeof(StopBits)))
-        {
-            Console.WriteLine("   {0}", s);
-        }
-
-        Console.Write("Enter StopBits value (None is not supported and \n" +
-         "raises an ArgumentOutOfRangeException. \n (Default: {0}):", defaultPortStopBits.ToString());
-        stopBits = Console.ReadLine();
-
-        if (stopBits == "")
-        {
-            stopBits = defaultPortStopBits.ToString();
-        }
-
-        return (StopBits)Enum.Parse(typeof(StopBits), stopBits, true);
-    }
-    */
-    /*
-    public static Handshake SetPortHandshake(Handshake defaultPortHandshake)
-    {
-        string handshake;
-
-        Console.WriteLine("Available Handshake options:");
-        foreach (string s in Enum.GetNames(typeof(Handshake)))
-        {
-            Console.WriteLine("   {0}", s);
-        }
-
-        Console.Write("Enter Handshake value (Default: {0}):", defaultPortHandshake.ToString());
-        handshake = Console.ReadLine();
-
-        if (handshake == "")
-        {
-            handshake = defaultPortHandshake.ToString();
-        }
-
-        return (Handshake)Enum.Parse(typeof(Handshake), handshake, true);
-    }
-    */
 }

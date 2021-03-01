@@ -57,4 +57,4 @@ dnPrologix/dnPrologix.test/obj
 dnPrologix/dnPrologix.console/bin/
 dnPrologix/dnPrologix.console/obj/
 dnPrologix/dnPrologix.serial/obj/
-dnPrologix.serial/bin/Debug/netcoreapp3.1
+dnPrologix/dnPrologix.serial/bin/

@@ -10,8 +10,9 @@ namespace dnPrologix.console
         static SerialPort _serialPort;
         static void Main(string[] args)
         {
-            var g = new GPIB_USB("COM5", 9600);
-            _serialPort = g.serialPort;
+            Console.WriteLine( "TODO");
+            //var g = new GPIB_USB("com5", 9600);
+            //_serialPort = g.serialPort;
         }
     }
 }
