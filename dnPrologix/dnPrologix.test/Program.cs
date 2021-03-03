@@ -38,80 +38,38 @@ public class PortChat
         Console.WriteLine($"Compile date: {_compile_date}");
         Console.WriteLine("");
 
-        GPIB_USB g = null;
-        try
-        {
-            g = new GPIB_USB(defaultSerialPort, 9600);
-            _serialPort = g.serialPort;
-        }
-        catch (System.Exception e)
-        {
-            Console.WriteLine($"ERROR 2: {e.Message}");
-            // throw new Exception( e.Message );
-            return;
-        }
-        //string name;
+        var g = new GPIB_USB( defaultSerialPort, 9600 );
+        _serialPort = g.serialPort;
+
         string message;
         StringComparer stringComparer = StringComparer.OrdinalIgnoreCase;
-        //Thread readThread = new Thread(Read);
-        // Read from the COM-port
-        // Thread readThread = new Thread(g.Read);
-        /*
-        Thread readThread = null;
-        try
-        {
-            readThread = new Thread(new ThreadStart(g.Read));
-            _continue = true;
-            readThread.Start();
-        }
-        catch
-        {
-            Console.WriteLine($"ERROR: ");
-            return;
-        }
-        */
+        Thread readThread = new Thread(g.Read);
 
-
-        // Console.WriteLine("Type QUIT to exit");
-
-
-        Console.Write("> ");
         _continue = true;
+        readThread.Start();
+
+        Console.Write("Type QUIT to exit.\n> ");
+
         while (_continue)
         {
-            //Console.WriteLine($"ROB: waiting for readline input");
             message = Console.ReadLine();
-            //Console.WriteLine($"ROB: read message {message}");
 
             if (stringComparer.Equals("quit", message))
             {
+                // Exit this while loop
                 _continue = false;
             }
             else
             {
-                // Console.WriteLine($"ROB: Sending {message}");
-                //try
-                //{
-
+                //_serialPort.WriteLine(
+                //    String.Format("<{0}>: {1}", name, message));
                 _serialPort.WriteLine(message);
-                //}
-                //catch
-                //{
-                //   Console.WriteLine($"He, error in sending to {defaultSerialPort}");
-                //  _continue = false;
-                //}
             }
         }
-        Console.WriteLine($"EOF. Good bye");
-        try
-        {
-            g.readThread.Join();
-            // readThread.Join();
-        }
-        catch
-        {
-            Console.WriteLine("Catch van Join");
-        }
-        _serialPort.Close();
+
+        /* readThread.Join(); */
+        // Close the serialPort (and the read Thread)
+        g.close() ;
     }
+
 }

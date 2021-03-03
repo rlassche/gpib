@@ -3,6 +3,7 @@
 
 using System;
 using System.IO.Ports;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 public class PortChat
@@ -13,9 +14,27 @@ public class PortChat
     static bool _continue;
     static SerialPort _serialPort;
 
+    static string defaultSerialPort;
+
     public static void Main()
     {
 
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            defaultSerialPort = "/dev/ttyUSB0";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            defaultSerialPort = "COM5";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            defaultSerialPort = "/dev/ttyUSB0";
+        }
+        else
+        {
+            Console.WriteLine("What OSPlatform???");
+        }
         Console.WriteLine($"GPIB console");
         Console.WriteLine($"Version: {_version}");
         Console.WriteLine($"Compile date: {_compile_date}");
@@ -29,7 +48,7 @@ public class PortChat
         _serialPort = new SerialPort();
 
         // Allow the user to set the appropriate properties.
-        _serialPort.PortName = SetPortName(_serialPort.PortName);
+        _serialPort.PortName = SetPortName( defaultSerialPort);
         _serialPort.BaudRate = SetPortBaudRate(_serialPort.BaudRate);
         _serialPort.Parity = SetPortParity(_serialPort.Parity);
         _serialPort.DataBits = SetPortDataBits(_serialPort.DataBits);
@@ -61,7 +80,7 @@ public class PortChat
             {
                 //_serialPort.WriteLine(
                 //    String.Format("<{0}>: {1}", name, message));
-                _serialPort.WriteLine( message ) ;
+                _serialPort.WriteLine(message);
             }
         }
 
@@ -93,7 +112,7 @@ public class PortChat
             Console.WriteLine("   {0}", s);
         }
 
-        Console.Write("Enter COM port value (Default: {0}): ", defaultPortName);
+        Console.Write("Enter device : ", defaultPortName);
         portName = Console.ReadLine();
 
         if (portName == "" || !(portName.ToLower()).StartsWith("com"))
@@ -170,7 +189,7 @@ public class PortChat
          "raises an ArgumentOutOfRangeException. \n (Default: {0}):", defaultPortStopBits.ToString());
         stopBits = Console.ReadLine();
 
-        if (stopBits == "" )
+        if (stopBits == "")
         {
             stopBits = defaultPortStopBits.ToString();
         }
