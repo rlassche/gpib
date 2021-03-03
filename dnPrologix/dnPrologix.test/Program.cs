@@ -7,6 +7,8 @@ using dnPrologix.serial;
 using System.Runtime.InteropServices;
 public class PortChat
 {
+    static private string _version = "1.0";
+    static string _compile_date = "03-MAR-2021";
     static bool _continue;
     static SerialPort _serialPort;
 
@@ -31,6 +33,10 @@ public class PortChat
         {
             Console.WriteLine("What OSPlatform???");
         }
+        Console.WriteLine($"GPIB test");
+        Console.WriteLine($"Version: {_version}");
+        Console.WriteLine($"Compile date: {_compile_date}");
+        Console.WriteLine("");
 
         GPIB_USB g = null;
         try
@@ -40,7 +46,7 @@ public class PortChat
         }
         catch (System.Exception e)
         {
-            Console.WriteLine($"ERROR: {e.Message}");
+            Console.WriteLine($"ERROR 2: {e.Message}");
             // throw new Exception( e.Message );
             return;
         }
@@ -66,15 +72,16 @@ public class PortChat
         */
 
 
-        Console.WriteLine("Type QUIT to exit");
+        // Console.WriteLine("Type QUIT to exit");
 
-        Console.WriteLine($"ROB: before while ");
-        _continue=true;
+
+        Console.Write("> ");
+        _continue = true;
         while (_continue)
         {
-            Console.WriteLine($"ROB: waiting for readline input");
+            //Console.WriteLine($"ROB: waiting for readline input");
             message = Console.ReadLine();
-            Console.WriteLine($"ROB: read message {message}");
+            //Console.WriteLine($"ROB: read message {message}");
 
             if (stringComparer.Equals("quit", message))
             {
@@ -82,24 +89,24 @@ public class PortChat
             }
             else
             {
-                Console.WriteLine($"ROB: Sending {message}");
+                // Console.WriteLine($"ROB: Sending {message}");
                 //try
                 //{
 
-                    _serialPort.WriteLine(message);
+                _serialPort.WriteLine(message);
                 //}
                 //catch
                 //{
-                 //   Console.WriteLine($"He, error in sending to {defaultSerialPort}");
-                  //  _continue = false;
+                //   Console.WriteLine($"He, error in sending to {defaultSerialPort}");
+                //  _continue = false;
                 //}
             }
         }
-        Console.WriteLine($"ROB: after while ");
+        Console.WriteLine($"EOF. Good bye");
         try
         {
-           g.readThread.Join();
-           // readThread.Join();
+            g.readThread.Join();
+            // readThread.Join();
         }
         catch
         {

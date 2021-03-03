@@ -7,12 +7,20 @@ using System.Threading;
 
 public class PortChat
 {
+
+    static private string _version = "1.0";
+    static string _compile_date = "03-MAR-2021";
     static bool _continue;
     static SerialPort _serialPort;
 
     public static void Main()
     {
-        string name;
+
+        Console.WriteLine($"GPIB console");
+        Console.WriteLine($"Version: {_version}");
+        Console.WriteLine($"Compile date: {_compile_date}");
+        Console.WriteLine("");
+        // string name;
         string message;
         StringComparer stringComparer = StringComparer.OrdinalIgnoreCase;
         Thread readThread = new Thread(Read);
@@ -36,10 +44,10 @@ public class PortChat
         _continue = true;
         readThread.Start();
 
-        Console.Write("Name: ");
-        name = Console.ReadLine();
+        //Console.Write("Name: ");
+        //name = Console.ReadLine();
 
-        Console.WriteLine("Type QUIT to exit");
+        Console.WriteLine("Type QUIT to exit.\n>");
 
         while (_continue)
         {

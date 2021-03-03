@@ -44,7 +44,7 @@ namespace dnPrologix.serial
                 }
                 catch
                 {
-                    Console.WriteLine($"ERROR: ");
+                    Console.WriteLine($"ERROR 1.: ");
                     return;
                 }
             }
@@ -74,7 +74,7 @@ namespace dnPrologix.serial
 
             serialPort.WriteLine( "++ver");
             var ver = serialPort.ReadLine() ;
-            Console.WriteLine( $"Controller: {ver}");
+            Console.WriteLine( $"{ver}");
 
             serialPort.WriteLine( "FB");
         }
