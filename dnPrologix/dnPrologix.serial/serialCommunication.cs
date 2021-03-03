@@ -35,13 +35,12 @@ namespace dnPrologix.serial
                 serialPort.Open();
                 _continue = true;
 
-
                 try
                 {
-                    readThread = new Thread(new ThreadStart(Read));
-                    //_continue = true;
-                    readThread.Start();
-                    // readThread.Join();
+                     readThread = new Thread(new ThreadStart(Read));
+                    _continue = true;
+                     readThread.Start();
+                    //readThread.Join();
                 }
                 catch
                 {
@@ -58,21 +57,26 @@ namespace dnPrologix.serial
         }
         void initPrologix()
         {
-
-            Console.WriteLine( "Set mode to CONTROLLER ");
-            serialPort.WriteLine( "++mode 1");
-
             Console.WriteLine( "Reset Controller ");
             serialPort.WriteLine( "++rst");
 
             Console.WriteLine( "Issue Device Clear ");
             serialPort.WriteLine( "++clr");
 
-            // EOS terminator - 0:CR+LF, 1:CR, 2:LF, 3:None
+            Console.WriteLine( "Set mode to CONTROLLER ");
+            serialPort.WriteLine( "++mode 1");
+
             Console.WriteLine( "Set EOS to 0 (=CR+LF)");
             serialPort.WriteLine( "++eos 0");
 
-            //serialPort.WriteLine( "FB");
+            Console.WriteLine( "Enable read-after-write ") ;
+            serialPort.WriteLine( "++auto 1");
+
+            serialPort.WriteLine( "++ver");
+            var ver = serialPort.ReadLine() ;
+            Console.WriteLine( $"Controller: {ver}");
+
+            serialPort.WriteLine( "FB");
         }
         public void Read()
         {

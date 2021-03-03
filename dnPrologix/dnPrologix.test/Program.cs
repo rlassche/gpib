@@ -65,13 +65,13 @@ public class PortChat
         }
         */
 
+
         Console.WriteLine("Type QUIT to exit");
 
         Console.WriteLine($"ROB: before while ");
         _continue=true;
         while (_continue)
         {
-
             Console.WriteLine($"ROB: waiting for readline input");
             message = Console.ReadLine();
             Console.WriteLine($"ROB: read message {message}");
@@ -83,22 +83,22 @@ public class PortChat
             else
             {
                 Console.WriteLine($"ROB: Sending {message}");
-                try
-                {
+                //try
+                //{
 
                     _serialPort.WriteLine(message);
-                }
-                catch
-                {
-                    Console.WriteLine($"He, error in sending to {defaultSerialPort}");
-                    _continue = false;
-                }
+                //}
+                //catch
+                //{
+                 //   Console.WriteLine($"He, error in sending to {defaultSerialPort}");
+                  //  _continue = false;
+                //}
             }
         }
         Console.WriteLine($"ROB: after while ");
         try
         {
-           // g.readThread.Join();
+           g.readThread.Join();
            // readThread.Join();
         }
         catch
