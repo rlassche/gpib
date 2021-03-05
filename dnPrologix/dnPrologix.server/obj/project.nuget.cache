@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "dgSpecHash": "WSz1dxmANX+e4QcVuNFOuJ84Nl2mB5Wgz8s2tY+WVa8nfPRnTHfytkNJr6s+geigmLPdMsGrC+zVhT1vWfT5XQ==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Rob Lassche\\gpib\\dnPrologix\\dnPrologix.server\\dnPrologix.server.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Rob Lassche\\.nuget\\packages\\microsoft.win32.registry\\6.0.0-preview.1.21102.12\\microsoft.win32.registry.6.0.0-preview.1.21102.12.nupkg.sha512",
+    "C:\\Users\\Rob Lassche\\.nuget\\packages\\runtime.linux-arm.runtime.native.system.io.ports\\6.0.0-preview.1.21102.12\\runtime.linux-arm.runtime.native.system.io.ports.6.0.0-preview.1.21102.12.nupkg.sha512",
+    "C:\\Users\\Rob Lassche\\.nuget\\packages\\runtime.linux-arm64.runtime.native.system.io.ports\\6.0.0-preview.1.21102.12\\runtime.linux-arm64.runtime.native.system.io.ports.6.0.0-preview.1.21102.12.nupkg.sha512",
+    "C:\\Users\\Rob Lassche\\.nuget\\packages\\runtime.linux-x64.runtime.native.system.io.ports\\6.0.0-preview.1.21102.12\\runtime.linux-x64.runtime.native.system.io.ports.6.0.0-preview.1.21102.12.nupkg.sha512",
+    "C:\\Users\\Rob Lassche\\.nuget\\packages\\runtime.native.system.io.ports\\6.0.0-preview.1.21102.12\\runtime.native.system.io.ports.6.0.0-preview.1.21102.12.nupkg.sha512",
+    "C:\\Users\\Rob Lassche\\.nuget\\packages\\runtime.osx-x64.runtime.native.system.io.ports\\6.0.0-preview.1.21102.12\\runtime.osx-x64.runtime.native.system.io.ports.6.0.0-preview.1.21102.12.nupkg.sha512",
+    "C:\\Users\\Rob Lassche\\.nuget\\packages\\system.io.ports\\6.0.0-preview.1.21102.12\\system.io.ports.6.0.0-preview.1.21102.12.nupkg.sha512",
+    "C:\\Users\\Rob Lassche\\.nuget\\packages\\system.security.accesscontrol\\6.0.0-preview.1.21102.12\\system.security.accesscontrol.6.0.0-preview.1.21102.12.nupkg.sha512",
+    "C:\\Users\\Rob Lassche\\.nuget\\packages\\system.security.principal.windows\\6.0.0-preview.1.21102.12\\system.security.principal.windows.6.0.0-preview.1.21102.12.nupkg.sha512"
+  ],
+  "logs": []
+}
