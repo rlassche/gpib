@@ -1,0 +1,13 @@
+{
+    "GpibController": {
+        "device":  "COM5",
+        "init": [ "++clr"]
+    },
+    "GpibDevices": [
+        { 
+            "id": "Racal-1998",
+            "address": 15,
+            "init": [ "FB"] 
+        }
+    ]
+}

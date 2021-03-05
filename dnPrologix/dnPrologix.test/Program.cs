@@ -5,10 +5,12 @@ using System.IO.Ports;
 using System.Threading;
 using dnPrologix.serial;
 using System.Runtime.InteropServices;
+using System.IO;
+
 public class PortChat
 {
-    static private string _version = "1.0";
-    static string _compile_date = "03-MAR-2021";
+    static private string _version = "1.1";
+    static string _compile_date = "05-MAR-2021";
     static bool _continue;
     static SerialPort _serialPort;
 
@@ -16,6 +18,12 @@ public class PortChat
 
     public static void Main()
     {
+        // Get command line arguments.
+        string[] args = Environment.GetCommandLineArgs();
+
+        GPIB_USB g = null;
+        // Default config file. Override file with ARGV
+        string configFile = "gpib.json";
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
@@ -33,13 +41,51 @@ public class PortChat
         {
             Console.WriteLine("What OSPlatform???");
         }
-        Console.WriteLine($"GPIB test");
+
+        try
+        {
+            if (args.Length > 1)
+            {
+                // Use the supplied config file
+                configFile = args[1];
+            }
+            Console.WriteLine($"Config file: {configFile}");
+            using (StreamReader r = new StreamReader(configFile))
+            {
+                string json = r.ReadToEnd();
+                GpibConfig c = Newtonsoft.Json.JsonConvert.DeserializeObject<GpibConfig>(json);
+                //Console.WriteLine(ObjectDumper.Dump(c));
+                Console.WriteLine($"gpibController.device: {c.gpibController.device}");
+                if (c.gpibController.device != null)
+                {
+                    defaultSerialPort = c.gpibController.device;
+                }
+            }
+        }
+        catch (System.IO.FileNotFoundException e)
+        {
+            Console.WriteLine($"{e.Message}");
+            return;
+        }
+
+
+
+
+        Console.WriteLine($"GPIB test. Controller device {defaultSerialPort}");
         Console.WriteLine($"Version: {_version}");
         Console.WriteLine($"Compile date: {_compile_date}");
         Console.WriteLine("");
 
-        var g = new GPIB_USB( defaultSerialPort, 9600 );
-        _serialPort = g.serialPort;
+        try
+        {
+            g = new GPIB_USB(defaultSerialPort, 9600);
+            _serialPort = g.serialPort;
+        }
+        catch (System.IO.FileNotFoundException e)
+        {
+            Console.WriteLine(e.Message + " Check config file gpib.json");
+            return;
+        }
 
         string message;
         StringComparer stringComparer = StringComparer.OrdinalIgnoreCase;
@@ -69,7 +115,7 @@ public class PortChat
 
         /* readThread.Join(); */
         // Close the serialPort (and the read Thread)
-        g.close() ;
+        g.close();
     }
 
 }

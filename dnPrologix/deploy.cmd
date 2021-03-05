@@ -15,21 +15,24 @@ REM Final directory where
 SET RESTSERVER_HOME=C:\GPIB
 
 
-echo Checkout master
-git checkout master
+echo Current branch
+git branch
+pause
+REM git checkout master
 
 
 GOTO PUBLISH
 
 :PUBLISH
-echo dotnet publish ....
+echo dotnet publish in %DEPLOY_DIR%
 call dotnet publish --output %DEPLOY_DIR% --configuration Release --runtime win-x64 --no-self-contained
+COPY dnPrologix.test\gpib.json %DEPLOY_DIR%\gpib.json.example
 
 DEL C:\temp\gpib-win.zip /Q/F/S
 echo Create file C:\temp\gpib-win.zip
 call powershell Compress-Archive -LiteralPath %DEPLOY_DIR% -DestinationPath C:\temp\gpib-win.zip
 
-echo SCP c:/tmp/gpib-win.zip to pi@rpi4
+echo SCP c:/temp/gpib-win.zip to pi@rpi4
 call scp c:/temp/gpib-win.zip pi@rpi4:/var/www/l-oss.nl/downloads
 
 REM
