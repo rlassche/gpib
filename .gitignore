@@ -56,5 +56,7 @@ dnPrologix/dnPrologix.test/bin/
 dnPrologix/dnPrologix.test/obj
 dnPrologix/dnPrologix.console/bin/
 dnPrologix/dnPrologix.console/obj/
-dnPrologix/dnPrologix.serial/obj/
 dnPrologix/dnPrologix.serial/bin/
+dnPrologix/dnPrologix.serial/obj/
+dnPrologix/dnPrologix.server/bin/
+dnPrologix/dnPrologix.server/obj/

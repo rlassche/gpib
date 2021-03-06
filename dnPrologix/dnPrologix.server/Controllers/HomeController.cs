@@ -11,11 +11,31 @@ namespace dnPrologix.server.Controllers
 {
     public class HomeController : Controller
     {
+        private IGpibService _service ;
         private readonly ILogger<HomeController> _logger;
 
-        public HomeController(ILogger<HomeController> logger)
+        /*
+        public HomeController( ) {
+            Console.WriteLine( "HomeController zonder parameter ");
+            _service = new GpibService() ;
+        }
+        */
+        /*
+        public HomeController( IGpibService service ) {
+            Console.WriteLine( "HomeController met IGpibService");
+            _service = service ;
+
+        }
+        */
+        // public HomeController(ILogger<HomeController> logger, IGpibService service, GpibContext db)
+        public HomeController(ILogger<HomeController> logger, IGpibService service )
         {
+            Console.WriteLine( "HomeController met ILogger en IGpibService en GpibContext");
             _logger = logger;
+            _service = service ;
+            Console.WriteLine( "TESTJE: "+ service.dbConnection() );
+            
+            _service.AddGpibDevice() ;
         }
 
         public IActionResult Index()
@@ -23,8 +43,9 @@ namespace dnPrologix.server.Controllers
             return View();
         }
 
-        public IActionResult Privacy()
+        public IActionResult Privacy( )
         {
+            Console.WriteLine( "HomeController.Privacy");
             return View();
         }
 
