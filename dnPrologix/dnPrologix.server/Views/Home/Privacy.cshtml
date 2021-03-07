@@ -1,6 +1,42 @@
+@model IEnumerable<GpibDevice>
+
 @{
     ViewData["Title"] = "Privacy Policy";
 }
 <h1>@ViewData["Title"]</h1>
 
 <p>Use this page to detail your site's privacy policy.</p>
+
+<div class="container">
+    <div class="row pt-4">
+        <div class="col-6">
+            <h2 class="text-primary">GPIB device list</h2>
+        </div>
+        <div class="col-6 text-right"><a class="btn btn-primary" asp-controller="Home" asp-action="Create">New GPIB Device</a></div>
+
+    </div>
+    <br>
+    @if( @Model.Count() > 0 )
+    {
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Name</th>
+                    <th>Connection Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach( var obj in Model) {
+                    <tr>
+                        <td>@obj.DEVICE_ID</td>
+                        <td>@obj.DESCRIPTION</td>
+                        <td>@obj.CONNECTION_TYPE</td>
+                    </tr>
+                }
+            </tbody>
+        </table> 
+    } else {
+        <p>No GPIB Device available</p>
+    }
+</div>

@@ -11,8 +11,10 @@ namespace dnPrologix.server.Controllers
 {
     public class HomeController : Controller
     {
-        private IGpibService _service ;
+        private IGpibService _service;
         private readonly ILogger<HomeController> _logger;
+
+        private GpibContext _db;
 
         /*
         public HomeController( ) {
@@ -28,14 +30,15 @@ namespace dnPrologix.server.Controllers
         }
         */
         // public HomeController(ILogger<HomeController> logger, IGpibService service, GpibContext db)
-        public HomeController(ILogger<HomeController> logger, IGpibService service )
+        public HomeController(ILogger<HomeController> logger, IGpibService service, GpibContext db)
         {
-            Console.WriteLine( "HomeController met ILogger en IGpibService en GpibContext");
+            Console.WriteLine("HomeController met ILogger en IGpibService en GpibContext");
+            _db = db;
             _logger = logger;
-            _service = service ;
-            Console.WriteLine( "TESTJE: "+ service.dbConnection() );
-            
-            _service.AddGpibDevice() ;
+            _service = service;
+            Console.WriteLine("TESTJE: " + service.dbConnection());
+
+            _service.AddGpibDevice();
         }
 
         public IActionResult Index()
@@ -43,10 +46,37 @@ namespace dnPrologix.server.Controllers
             return View();
         }
 
-        public IActionResult Privacy( )
+        public IActionResult Privacy()
         {
-            Console.WriteLine( "HomeController.Privacy");
+            Console.WriteLine("HomeController.Privacy");
+            IEnumerable<GpibDevice> objList = _db.GpibDevice.ToList();
+            //Console.WriteLine( ObjectDumper.Dump( objList));
+
+            return View(objList);
+        }
+
+
+        public IActionResult Create()
+        {
+            Console.WriteLine("HomeController.Create");
+            //IEnumerable<GpibDevice> objList = _db.GpibDevice.ToList() ;
+            //Console.WriteLine( ObjectDumper.Dump( objList));
+
             return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Create( GpibDevice obj)
+        {
+            Console.WriteLine("HomeController.POST.Create");
+            //IEnumerable<GpibDevice> objList = _db.GpibDevice.ToList() ;
+            //Console.WriteLine( ObjectDumper.Dump( objList));
+            obj.CONNECTION_TYPE = "prologix-gpib-usb";
+            _db.GpibDevice.Add( obj );
+            _db.SaveChanges() ;
+
+            return RedirectToAction( "Privacy");
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

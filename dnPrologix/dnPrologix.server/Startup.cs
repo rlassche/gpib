@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 
 using dnPrologix.server.Models;
-
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 
 namespace dnPrologix.server
 {
@@ -29,27 +29,37 @@ namespace dnPrologix.server
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-             // services.AddDbContext<GpibContext>(options => options.UseMySql(Configuration.GetConnectionString("Default") ) );
-             //services.AddDbContext<GpibContext>(options => options.UseMySql( "" );
-                            
-            //MySqlConnection conn = new MySqlConnection(connStr);      
+            Console.WriteLine( "ConfigureServices");
+            var cstring = Configuration.GetConnectionString("Default") ;
+            // Use DbSet  to push table definitions to the database (if you want)
+            // So, migrations
+            services.AddDbContextPool<GpibContext>(
+                dbContextOptions => dbContextOptions
+                    .UseMySql(
+                        // Replace with your connection string.
+                        cstring,
+                        // Replace with your server version and type.
+                        // For common usages, see pull request #1233.
+                        new MySqlServerVersion(new Version(10, 1, 48)), // use MariaDbServerVersion for MariaDB
+                        mySqlOptions => mySqlOptions
+                            .CharSetBehavior(CharSetBehavior.NeverAppend))
+                    // Everything from this point on is optional but helps with debugging.
+                    .EnableSensitiveDataLogging()
+                    .EnableDetailedErrors()
+            );
+
+
             services.AddControllersWithViews();
             //
             // Add a custom service. This service can be passed to Controllers.
             //
             services.AddSingleton<IGpibService>( ServiceProvider => new GpibService(Configuration.GetConnectionString("Default")) );
-            /*
-            services.Add( new ServiceDescriptor(
-                                typeof(GpibContext),
-                                new GpibContext(Configuration.GetConnectionString("Default"))
-                          )
-                        );
-                        */
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IGpibService service)
         {
+            Console.WriteLine( "Configure");
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
