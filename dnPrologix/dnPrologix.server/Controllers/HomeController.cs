@@ -71,24 +71,24 @@ namespace dnPrologix.server.Controllers
         }
 
         [HttpGet]
-        public IActionResult Edit( int? id )
+        public IActionResult Edit( string? id )
         {
             _service.wsSendToAll( "Dit is HomeController.Edit");
-            if( id == null || id == 0 ) {
+            if( id == null ) {
                 return NotFound() ;
             }
             var obj = _db.GpibDevice.Find( id );
             if( obj == null ) {
+                Console.WriteLine( $"NO device {id} found.");
                 return NotFound() ;
             }
+            Console.WriteLine( $"Device {id} found.");
             return View( obj );
 
-            Console.WriteLine("HomeController.Create");
             //IEnumerable<GpibDevice> objList = _db.GpibDevice.ToList() ;
             //Console.WriteLine( ObjectDumper.Dump( objList));
-
-            return View();
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(GpibDevice obj)

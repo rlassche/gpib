@@ -84,29 +84,30 @@ namespace dnPrologix.server
             app.UseWebSockets();
 
 
+            // Handle http upgrades to ws
             app.Use(async (context, next) =>
                          {
-                  // A websocket endpoint in the application is /ws
-                  if (context.Request.Path == "/ws")
+                             // A websocket endpoint in the application is /ws
+                             if (context.Request.Path == "/ws")
                              {
-                      // Check if the request is indead a Websocketrequest
-                      if (context.WebSockets.IsWebSocketRequest)
+                                 // Check if the request is indead a Websocketrequest
+                                 if (context.WebSockets.IsWebSocketRequest)
                                  {
-                          // Do the ws-handshake to accept the connection
-                          using (WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync())
+                                     // Do the ws-handshake to accept the connection
+                                     using (WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync())
                                      {
-                              // Generate a Unique Connection Id for administration purposes
-                              var wsConnectionId = Guid.NewGuid();
-                              // Register the connection Id
-                              wsConnections.Add(wsConnectionId, webSocket);
+                                         // Generate a Unique Connection Id for administration purposes
+                                         var wsConnectionId = Guid.NewGuid();
+                                         // Register the connection Id
+                                         wsConnections.Add(wsConnectionId, webSocket);
 
-                              // Console.WriteLine("New WebSocket client. Connection Id: " + wsConnectionId);
+                                         // Console.WriteLine("New WebSocket client. Connection Id: " + wsConnectionId);
 
-                              // Each connection has it's own Echo space
-                              Console.WriteLine("Create here dhe await Echo....");
-                              await service.Echo(webSocket, wsConnections);
-                              // await Echo(context, webSocket);
-                          }
+                                         // Each connection has it's own Echo space
+                                         Console.WriteLine("Create here dhe await Echo....");
+                                         await service.Echo(webSocket, wsConnections);
+                                         // await Echo(context, webSocket);
+                                     }
                                  }
                                  else
                                  {
@@ -115,6 +116,7 @@ namespace dnPrologix.server
                              }
                              else
                              {
+                                 // Pass to the next in the pipeline
                                  await next();
                              }
 
