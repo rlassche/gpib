@@ -24,6 +24,7 @@
                     <th>Id</th>
                     <th>Name</th>
                     <th>Connection Type</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -32,6 +33,13 @@
                         <td>@obj.DEVICE_ID</td>
                         <td>@obj.DESCRIPTION</td>
                         <td>@obj.CONNECTION_TYPE</td>
+                        <td class= "text-center"> 
+                            <div class= "w-75 btn-group role="group>
+
+                            <a class="btn btn-primary mx-2" asp-controller="Home" asp-action="Edit" asp-route-Id="@obj.DEVICE_ID">Edit</a>
+                            <a class="l-25 btn btn-danger mx-2" asp-controller="Home" asp-action="Del" asp-route-Id="@obj.DEVICE_ID">Del</a>
+                            </div>        
+                        </td>
                     </tr>
                 }
             </tbody>

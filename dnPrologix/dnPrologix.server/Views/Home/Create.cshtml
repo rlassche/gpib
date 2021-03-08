@@ -2,6 +2,8 @@
 
 <form method="post" asp-action="Create">
     <div class="border p-3">  
+        <!-- ModelOnly, All -->
+        <div asp-validation-summary="All" class="text-danger"></div>
 
         <div class="form-group row">
             <h2 class="text-info pl-3"> Add Category</h2>
@@ -19,7 +21,9 @@
                 </div>
                 <div class="form-group row">
                     <div class="col-4"> <label asp-for="PAD"></label> </div>
-                    <div class="col-8"> <input asp-for="PAD" class="form-control"/> </div>
+                    <div class="col-8"> <input asp-for="PAD" class="form-control"/> 
+                    <span asp-validation-for="PAD" class="text-danger"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -36,3 +40,8 @@
     </div>
 
 </form>
+
+<!-- Client side validations -->
+@section Scripts {
+    @{ <partial name="_ValidationScriptsPartial" />}
+}

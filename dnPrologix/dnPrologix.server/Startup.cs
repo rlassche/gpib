@@ -14,11 +14,13 @@ using Microsoft.EntityFrameworkCore;
 
 using dnPrologix.server.Models;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
+using System.Net.WebSockets;
 
 namespace dnPrologix.server
 {
     public class Startup
     {
+        Dictionary<Guid, WebSocket> wsConnections = new Dictionary<Guid, WebSocket>();
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -29,8 +31,8 @@ namespace dnPrologix.server
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            Console.WriteLine( "ConfigureServices");
-            var cstring = Configuration.GetConnectionString("Default") ;
+            Console.WriteLine("ConfigureServices");
+            var cstring = Configuration.GetConnectionString("Default");
             // Use DbSet  to push table definitions to the database (if you want)
             // So, migrations
             services.AddDbContextPool<GpibContext>(
@@ -53,13 +55,13 @@ namespace dnPrologix.server
             //
             // Add a custom service. This service can be passed to Controllers.
             //
-            services.AddSingleton<IGpibService>( ServiceProvider => new GpibService(Configuration.GetConnectionString("Default")) );
+            services.AddSingleton<IGpibService>(ServiceProvider => new GpibService(Configuration.GetConnectionString("Default")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IGpibService service)
         {
-            Console.WriteLine( "Configure");
+            Console.WriteLine("Configure");
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -76,6 +78,48 @@ namespace dnPrologix.server
             app.UseRouting();
 
             app.UseAuthorization();
+
+            Console.WriteLine("add.UseWebSockets() ;");
+
+            app.UseWebSockets();
+
+
+            app.Use(async (context, next) =>
+                         {
+                  // A websocket endpoint in the application is /ws
+                  if (context.Request.Path == "/ws")
+                             {
+                      // Check if the request is indead a Websocketrequest
+                      if (context.WebSockets.IsWebSocketRequest)
+                                 {
+                          // Do the ws-handshake to accept the connection
+                          using (WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync())
+                                     {
+                              // Generate a Unique Connection Id for administration purposes
+                              var wsConnectionId = Guid.NewGuid();
+                              // Register the connection Id
+                              wsConnections.Add(wsConnectionId, webSocket);
+
+                              // Console.WriteLine("New WebSocket client. Connection Id: " + wsConnectionId);
+
+                              // Each connection has it's own Echo space
+                              Console.WriteLine("Create here dhe await Echo....");
+                              await service.Echo(webSocket, wsConnections);
+                              // await Echo(context, webSocket);
+                          }
+                                 }
+                                 else
+                                 {
+                                     context.Response.StatusCode = 400;
+                                 }
+                             }
+                             else
+                             {
+                                 await next();
+                             }
+
+                         });
+
 
             app.UseEndpoints(endpoints =>
             {
