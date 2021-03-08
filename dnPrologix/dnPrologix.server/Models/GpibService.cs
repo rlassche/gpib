@@ -10,6 +10,9 @@ namespace dnPrologix.server.Models
 {
     public class GpibService : IGpibService
     {
+        // List with ALL connected webSocket clients
+        Dictionary<Guid, WebSocket> _wsConnections = null;
+
         public GpibService()
         {
             Console.WriteLine("GpibService zonder argument");
@@ -17,16 +20,15 @@ namespace dnPrologix.server.Models
         public GpibService(string connectString)
         {
             Console.WriteLine("************************");
-            Console.WriteLine($"GpibService met argument: {connectString}");
+            Console.WriteLine($"GpibService Controller met argument: {connectString}");
             Console.WriteLine("************************");
-
-
-
         }
+        /*
         public string dbConnection()
         {
             return "TEST VAN ROB";
         }
+        */
 
         public bool AddGpibDevice()
         {
@@ -35,6 +37,7 @@ namespace dnPrologix.server.Models
         }
         private WebSocket _webSocket = null;
 
+        // Send a message to ALL connected WebSocket clients
         public async Task wsSendToAll(string msg)
         {
             Console.WriteLine($"wsSendToAll: {msg}");
@@ -46,7 +49,8 @@ namespace dnPrologix.server.Models
             }
 
         }
-        Dictionary<Guid, WebSocket> _wsConnections = null;
+
+        // Each connected WebSocket clients has its OWN Echo task
         public async Task Echo(WebSocket webSocket, Dictionary<Guid, WebSocket> wsConnections)
         {
             Console.WriteLine("GpibService: Echo ");
@@ -106,7 +110,7 @@ namespace dnPrologix.server.Models
     public interface IGpibService
     {
         bool AddGpibDevice();
-        string dbConnection();
+        // string dbConnection();
         //async Task Echo(HttpContext contextxxx, WebSocket webSocket, Dictionary<Guid, WebSocket> wsConnections );
         //Task Echo() ;
         Task Echo(WebSocket webSocket, Dictionary<Guid, WebSocket> wsConnections);

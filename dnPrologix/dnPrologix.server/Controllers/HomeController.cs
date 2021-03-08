@@ -36,20 +36,22 @@ namespace dnPrologix.server.Controllers
             _db = db;
             _logger = logger;
             _service = service;
-            Console.WriteLine("TESTJE: " + service.dbConnection());
-            service.wsSendToAll( "Dit is HomeController");
+            // Console.WriteLine("TESTJE: " + service.dbConnection());
+            _service.wsSendToAll( "Dit is HomeController");
 
             _service.AddGpibDevice();
         }
 
         public IActionResult Index()
         {
+            _service.wsSendToAll( "Dit is HomeController.Index");
             return View();
         }
 
         public IActionResult Privacy()
         {
             Console.WriteLine("HomeController.Privacy");
+            _service.wsSendToAll( "Dit is HomeController.Privacy");
             IEnumerable<GpibDevice> objList = _db.GpibDevice.ToList();
             //Console.WriteLine( ObjectDumper.Dump( objList));
 
@@ -63,6 +65,7 @@ namespace dnPrologix.server.Controllers
             Console.WriteLine("HomeController.Create");
             //IEnumerable<GpibDevice> objList = _db.GpibDevice.ToList() ;
             //Console.WriteLine( ObjectDumper.Dump( objList));
+            _service.wsSendToAll( "Dit is HomeController.Create");
 
             return View();
         }
@@ -70,6 +73,7 @@ namespace dnPrologix.server.Controllers
         [HttpGet]
         public IActionResult Edit( int? id )
         {
+            _service.wsSendToAll( "Dit is HomeController.Edit");
             if( id == null || id == 0 ) {
                 return NotFound() ;
             }
@@ -90,6 +94,7 @@ namespace dnPrologix.server.Controllers
         public IActionResult Create(GpibDevice obj)
         {
             Console.WriteLine("HomeController.POST.Create");
+            _service.wsSendToAll( "Dit is HomeController.Post.Create");
             if (ModelState.IsValid)
             {
 
@@ -107,6 +112,7 @@ namespace dnPrologix.server.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
+            _service.wsSendToAll( "Dit is HomeController.Error");
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
