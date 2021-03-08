@@ -122,6 +122,9 @@ namespace dnPrologix.server
 
                          });
 
+            Console.WriteLine( "ALLEEN NU GPIB  DEVICE STARTEN");
+            service.AddGpibDevice( wsConnections) ;
+            Console.WriteLine( "GPIB  DEVICE IS NU GESTART IN BACKGROUND");
 
             app.UseEndpoints(endpoints =>
             {

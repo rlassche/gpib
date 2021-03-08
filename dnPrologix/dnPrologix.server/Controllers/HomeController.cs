@@ -13,6 +13,7 @@ namespace dnPrologix.server.Controllers
     {
         private IGpibService _service;
         private readonly ILogger<HomeController> _logger;
+        private GpibService _gpibService;
 
         private GpibContext _db;
 
@@ -30,7 +31,7 @@ namespace dnPrologix.server.Controllers
         }
         */
         // public HomeController(ILogger<HomeController> logger, IGpibService service, GpibContext db)
-        public HomeController(ILogger<HomeController> logger, IGpibService service, GpibContext db)
+        public HomeController(ILogger<HomeController> logger, IGpibService service, GpibContext db )
         {
             Console.WriteLine("HomeController met ILogger en IGpibService en GpibContext");
             _db = db;
@@ -39,17 +40,21 @@ namespace dnPrologix.server.Controllers
             // Console.WriteLine("TESTJE: " + service.dbConnection());
             _service.wsSendToAll( "Dit is HomeController");
 
-            _service.AddGpibDevice();
         }
 
         public IActionResult Index()
         {
             _service.wsSendToAll( "Dit is HomeController.Index");
+            _service.sendToGpibController( "FB");
+            _service.sendToGpibController( "++ver");
             return View();
         }
 
         public IActionResult Privacy()
         {
+            _service.sendToGpibController( "++ver");
+            _service.sendToGpibController( "FA");
+
             Console.WriteLine("HomeController.Privacy");
             _service.wsSendToAll( "Dit is HomeController.Privacy");
             IEnumerable<GpibDevice> objList = _db.GpibDevice.ToList();

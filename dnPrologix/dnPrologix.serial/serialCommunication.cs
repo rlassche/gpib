@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO.Ports;
+using System.Net.WebSockets;
+using System.Text;
 using System.Threading;
 
 namespace dnPrologix.serial
@@ -8,11 +11,18 @@ namespace dnPrologix.serial
     {
         public string SharedData;
         private bool _continue;
+        private Dictionary<Guid, WebSocket> _wsConnections;
+
 
         // _serialPort is used for READ/WRITE bytes to and from the COM-port
         public SerialPort serialPort { get; }
         public Thread readThread { set; get; }
 
+        public void setWS(Dictionary<Guid, WebSocket> wsConnections)
+        {
+            Console.WriteLine("setWS");
+            _wsConnections = wsConnections;
+        }
         // Constructor that takes no arguments:
         public GPIB_USB(string portName, int baudRate)
         {
@@ -35,12 +45,13 @@ namespace dnPrologix.serial
             _serialPort.WriteTimeout = 500;
 
             _serialPort.Open();
-            _continue = true ;
+            _continue = true;
             serialPort = _serialPort;
         }
-        public void close() {
+        public void close()
+        {
             // Thread must exit from loop
-            _continue = false ;
+            _continue = false;
         }
 
         void initPrologix()
@@ -67,7 +78,35 @@ namespace dnPrologix.serial
             serialPort.WriteLine("FB");
         }
 
-        public void Read()
+        public async void Read()
+        {
+            while (_continue)
+            {
+                try
+                {
+                    string message = serialPort.ReadLine();
+
+                    Console.WriteLine(message);
+
+                    //if (_wsConnections != null)
+                    //{
+                        var x = Encoding.UTF8.GetBytes(message);
+                        foreach (var item in _wsConnections)
+                        {
+                            Console.WriteLine("WS: Send to ONE client");
+                            await item.Value.SendAsync(new ArraySegment<byte>(x), WebSocketMessageType.Text, true, CancellationToken.None);
+                        }
+                    //}
+
+
+                }
+                catch (TimeoutException) { }
+            }
+            Console.WriteLine($"Closing serialPort {serialPort.PortName}");
+            serialPort.Close();
+        }
+
+        public void Read2(object v)
         {
             while (_continue)
             {
@@ -78,9 +117,8 @@ namespace dnPrologix.serial
                 }
                 catch (TimeoutException) { }
             }
-            Console.WriteLine( $"Closing serialPort {serialPort.PortName}");
-            serialPort.Close() ;
+            Console.WriteLine($"Closing serialPort {serialPort.PortName}");
+            serialPort.Close();
         }
-
     }
 }
