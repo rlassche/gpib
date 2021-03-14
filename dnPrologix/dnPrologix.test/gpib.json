@@ -1,13 +1,14 @@
 {
-    "GpibController": {
-        "device":  "COM5",
-        "init": [ "++clr"]
-    },
+  "dataRoot": "/tmp/abc",
+  "GpibController": {
+    "device": "COM5",
+    "init": ["++rst", "++clr", "++mode 1", "++eos 0", "++auto 1", "++ver" ],
     "GpibDevices": [
-        { 
-            "id": "Racal-1998",
-            "address": 15,
-            "init": [ "FB"] 
-        }
+      {
+        "id": "Racal-1998",
+        "address": 15,
+        "init": ["FB"]
+      }
     ]
+  }
 }

@@ -32,7 +32,10 @@ namespace dnPrologix.server
         public void ConfigureServices(IServiceCollection services)
         {
             Console.WriteLine("ConfigureServices");
+            //Console.WriteLine( $"GpibConfig file in appsettings.json: {gpibConfig}");
             var cstring = Configuration.GetConnectionString("Default");
+            var gpibConfigFile = Configuration.GetConnectionString( "GpibConfig");
+            Console.WriteLine( $"gpibConfigFile: {gpibConfigFile}");
             // Use DbSet  to push table definitions to the database (if you want)
             // So, migrations
             services.AddDbContextPool<GpibContext>(
@@ -55,7 +58,10 @@ namespace dnPrologix.server
             //
             // Add a custom service. This service can be passed to Controllers.
             //
-            services.AddSingleton<IGpibService>(ServiceProvider => new GpibService(Configuration.GetConnectionString("Default")));
+            services.AddSingleton<IGpibService>(ServiceProvider => new GpibService(
+                    Configuration.GetConnectionString("Default"),
+                    Configuration.GetConnectionString("GpibConfig")
+                    ));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -123,7 +129,7 @@ namespace dnPrologix.server
                          });
 
             Console.WriteLine( "ALLEEN NU GPIB  DEVICE STARTEN");
-            service.AddGpibDevice( wsConnections) ;
+            service.AddGpibDevice( wsConnections ) ;
             Console.WriteLine( "GPIB  DEVICE IS NU GESTART IN BACKGROUND");
 
             app.UseEndpoints(endpoints =>

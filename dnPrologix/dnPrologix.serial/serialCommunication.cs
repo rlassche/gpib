@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Ports;
 using System.Net.WebSockets;
 using System.Text;
@@ -13,6 +14,8 @@ namespace dnPrologix.serial
         private bool _continue;
         private Dictionary<Guid, WebSocket> _wsConnections;
 
+        private string _logFile  ;
+        private string _dataRoot ;
 
         // _serialPort is used for READ/WRITE bytes to and from the COM-port
         public SerialPort serialPort { get; }
@@ -24,8 +27,20 @@ namespace dnPrologix.serial
             _wsConnections = wsConnections;
         }
         // Constructor that takes no arguments:
-        public GPIB_USB(string portName, int baudRate)
+        public GPIB_USB(string portName, int baudRate, string[] initController, string dataRoot)
         {
+            try
+            {
+                DirectoryInfo di = Directory.CreateDirectory(dataRoot + Path.DirectorySeparatorChar + "gpib_controller");
+            }
+            catch (System.IO.DriveNotFoundException e)
+            {
+                Console.WriteLine($"ERROR GPIB_USB: Cannot create DATA_ROOT/gpib_controller directory. (_dataRoot) : {e.Message}");
+                return;
+            }
+            _dataRoot = dataRoot ;
+            //_logFile = dataRoot + Path.DirectorySeparatorChar + "gpib_controller" + Path.DirectorySeparatorChar + "deviceData.txt";
+
             SerialPort _serialPort;
             // Create a new SerialPort object with default settings.
             _serialPort = new SerialPort();
@@ -47,6 +62,12 @@ namespace dnPrologix.serial
             _serialPort.Open();
             _continue = true;
             serialPort = _serialPort;
+
+            for (int i = 0; i < initController.Length; i++)
+            {
+                Console.WriteLine($"GPIB_USB: init Controller: {initController[i]}");
+                serialPort.WriteLine(initController[i]);
+            }
         }
         public void close()
         {
@@ -54,6 +75,7 @@ namespace dnPrologix.serial
             _continue = false;
         }
 
+        /*
         void initPrologix()
         {
             Console.WriteLine("Reset Controller ");
@@ -77,32 +99,50 @@ namespace dnPrologix.serial
 
             serialPort.WriteLine("FB");
         }
+        */
 
         public async void Read()
         {
+            // StreamWriter writer = new StreamWriter(_logFile);  
+            StreamWriter writer = null ;
+            Console.WriteLine( $"GPIB_USB: Read is started. Log file == {_logFile}");
+
+            string fileName = _dataRoot + Path.DirectorySeparatorChar + "gpib_controller" + Path.DirectorySeparatorChar + "deviceData_";
+            int fileCount = 0 ;
+            int readCount=0;
             while (_continue)
             {
                 try
                 {
                     string message = serialPort.ReadLine();
-
+                    // Write to file
+                    if( readCount++ % 100 == 0 ) {
+                        if( writer != null ) {
+                            writer.Close() ;
+                        }
+                        fileCount++  ;
+                        //string newfileName = fileCount.ToString( "000000.##");
+                        writer = new StreamWriter( fileName + fileCount.ToString( "000000.##")+ ".log");
+                        Console.WriteLine( "Create file: "+ fileCount.ToString("000000.##"));
+                    }
+                    //Console.WriteLine( $"DATA to file: {message}");
+                    writer.Write( message );
                     Console.WriteLine(message);
 
-                    //if (_wsConnections != null)
-                    //{
+                    if (_wsConnections != null)
+                    {
                         var x = Encoding.UTF8.GetBytes(message);
                         foreach (var item in _wsConnections)
                         {
                             Console.WriteLine("WS: Send to ONE client");
                             await item.Value.SendAsync(new ArraySegment<byte>(x), WebSocketMessageType.Text, true, CancellationToken.None);
                         }
-                    //}
-
-
+                    }
                 }
                 catch (TimeoutException) { }
             }
             Console.WriteLine($"Closing serialPort {serialPort.PortName}");
+            writer.Close() ;
             serialPort.Close();
         }
 

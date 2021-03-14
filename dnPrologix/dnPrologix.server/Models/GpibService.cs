@@ -16,6 +16,8 @@ namespace dnPrologix.server.Models
         Dictionary<Guid, WebSocket> _wsConnections = null;
         private SerialPort _serialPort;
 
+        private string _gpibConfigFilename = null ;
+
         private GPIB_USB _g = null;
         private WebSocket _webSocket = null;
 
@@ -23,11 +25,13 @@ namespace dnPrologix.server.Models
         {
             Console.WriteLine("GpibService zonder argument");
         }
-        public GpibService(string connectString)
+        public GpibService(string connectString, string gpibConfigFile)
         {
             Console.WriteLine("************************");
             Console.WriteLine($"GpibService Controller met argument: {connectString}");
+            Console.WriteLine($"                                   : {gpibConfigFile}");
             Console.WriteLine("************************");
+            _gpibConfigFilename = gpibConfigFile ;
         }
         /*
         public string dbConnection()
@@ -43,11 +47,14 @@ namespace dnPrologix.server.Models
         }
         public async Task<bool>  AddGpibDevice(Dictionary<Guid, WebSocket> wsClients)
         {
+            Console.WriteLine( $"OKAY, CONFIG FILE FOR GPIB: {_gpibConfigFilename}" ) ;
+            Console.WriteLine( "TODO : DESERIALIZE THE JSON FILE");
             string defaultSerialPort = "COM5";
             Console.WriteLine( $"AddGpibDevice: {defaultSerialPort}");
             try
             {
-                _g = new GPIB_USB(defaultSerialPort, 9600);
+                string[] cmds = new string[] { "++clr"} ;
+                _g = new GPIB_USB(defaultSerialPort, 9600 , cmds, "dataroot" );
                 _serialPort = _g.serialPort;
             }
             catch (System.IO.FileNotFoundException e)
@@ -74,6 +81,7 @@ namespace dnPrologix.server.Models
 
             while (_continue)
             {
+                // Read from STDIN
                 message = Console.ReadLine();
 
                 if (stringComparer.Equals("quit", message))

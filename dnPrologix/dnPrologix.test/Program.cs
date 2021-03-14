@@ -15,9 +15,17 @@ public class PortChat
     static SerialPort _serialPort;
 
     static string defaultSerialPort;
+    static string _dataRoot;
 
     public static void Main()
     {
+        string message;
+
+        Console.WriteLine($"GPIB Logger test utility.");
+        Console.WriteLine("");
+        Console.WriteLine($"Version: {_version}");
+        Console.WriteLine($"Compile date: {_compile_date}");
+
         // Get command line arguments.
         string[] args = Environment.GetCommandLineArgs();
 
@@ -42,60 +50,105 @@ public class PortChat
             Console.WriteLine("What OSPlatform???");
         }
 
-        try
+        //try
+        //{
+        if (args.Length > 1)
         {
-            if (args.Length > 1)
+            // Use the supplied config file
+            configFile = args[1];
+        }
+        Console.WriteLine(System.Environment.CurrentDirectory);
+        Console.WriteLine($"Config file: {configFile}");
+        using (StreamReader r = new StreamReader(configFile))
+        {
+            string json = r.ReadToEnd();
+            GpibConfig c = Newtonsoft.Json.JsonConvert.DeserializeObject<GpibConfig>(json);
+            //Console.WriteLine(ObjectDumper.Dump(c));
+            if (c.dataRoot == null)
             {
-                // Use the supplied config file
-                configFile = args[1];
+                _dataRoot = System.Environment.CurrentDirectory + Path.DirectorySeparatorChar + "data";
             }
-            Console.WriteLine($"Config file: {configFile}");
-            using (StreamReader r = new StreamReader(configFile))
+            else
             {
-                string json = r.ReadToEnd();
-                GpibConfig c = Newtonsoft.Json.JsonConvert.DeserializeObject<GpibConfig>(json);
-                //Console.WriteLine(ObjectDumper.Dump(c));
-                Console.WriteLine($"gpibController.device: {c.gpibController.device}");
-                if (c.gpibController.device != null)
+                _dataRoot = c.dataRoot;
+            }
+
+            if (!Directory.Exists(_dataRoot))
+            {
+                Console.WriteLine($"ERROR: DATA_ROOT directory {_dataRoot} does not exist");
+                return;
+            }
+            Console.WriteLine($"DATA_ROOT: {_dataRoot}");
+
+            if (c.gpibController != null)
+            {
+                /*
+                try
                 {
-                    defaultSerialPort = c.gpibController.device;
+                    DirectoryInfo di = Directory.CreateDirectory(_dataRoot + Path.DirectorySeparatorChar + "gpib_controller");
                 }
+                catch (System.IO.DriveNotFoundException e)
+                {
+                    Console.WriteLine($"ERROR: Cannot create DATA_ROOT/gpib_controller directory. (_dataRoot) : {e.Message}");
+                    return;
+                }
+                */
+
+                Console.WriteLine($"gpibController.device: {c.gpibController.device}");
+                defaultSerialPort = c.gpibController.device;
+
+                try
+                {
+                    string[] initController =null ;
+                    // Console.WriteLine( ObjectDumper.Dump( c.gpibController.init ) ) ;
+                    if( c.gpibController.init == null ) {
+                        Console.WriteLine( "ERROR: NO Gpib Controller init commands found.");
+                        Console.WriteLine( "     : gpib.json => GpibController.init [] ");
+                        return ;
+                    }
+
+                    initController = c.gpibController.init.ToArray() ;
+                    g = new GPIB_USB(defaultSerialPort, 9600, initController, _dataRoot);
+                    _serialPort = g.serialPort;
+
+                    // Create a Thread for the GPIB-Controller, and 
+                    // start the Read method.
+                    Thread readThread = new Thread(g.Read);
+
+                    readThread.Start();
+                }
+                catch (System.IO.FileNotFoundException e)
+                {
+                    Console.WriteLine(e.Message + " Check config file gpib.json");
+                    return;
+                }
+
+
             }
         }
-        catch (System.IO.FileNotFoundException e)
-        {
-            Console.WriteLine($"{e.Message}");
-            return;
-        }
+        //}
+        //catch (System.IO.FileNotFoundException e)
+        //{
+        //    Console.WriteLine($"{e.Message}");
+        //    return;
+        //}
 
 
 
 
-        Console.WriteLine($"GPIB test. Controller device {defaultSerialPort}");
-        Console.WriteLine($"Version: {_version}");
-        Console.WriteLine($"Compile date: {_compile_date}");
-        Console.WriteLine("");
 
-        try
-        {
-            g = new GPIB_USB(defaultSerialPort, 9600);
-            _serialPort = g.serialPort;
-        }
-        catch (System.IO.FileNotFoundException e)
-        {
-            Console.WriteLine(e.Message + " Check config file gpib.json");
-            return;
-        }
 
-        string message;
-        StringComparer stringComparer = StringComparer.OrdinalIgnoreCase;
-        Thread readThread = new Thread(g.Read);
+
 
         _continue = true;
-        readThread.Start();
+       
 
         Console.Write("Type QUIT to exit.\n> ");
 
+        StringComparer stringComparer = StringComparer.OrdinalIgnoreCase;
+        //
+        // In this loop, just read from STDIN and send commands to the Tasks running in the background
+        //
         while (_continue)
         {
             message = Console.ReadLine();
