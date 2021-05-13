@@ -13,7 +13,7 @@ namespace dnPrologix.server
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine( "Program.cs - Main");
+            Console.WriteLine( "dnPrologix.server project");
             CreateHostBuilder(args).Build().Run();
         }
 

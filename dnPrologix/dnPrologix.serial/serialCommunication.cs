@@ -10,6 +10,7 @@ namespace dnPrologix.serial
 {
     public class GPIB_USB
     {
+        int _currentAddress=-1;
         public string SharedData;
         private bool _continue;
         private Dictionary<Guid, WebSocket> _wsConnections;
@@ -26,9 +27,15 @@ namespace dnPrologix.serial
             Console.WriteLine("setWS");
             _wsConnections = wsConnections;
         }
+        // Display the bytes to the STDOUT of the console 
+        public bool consoleOutput { set; get; }
+
         // Constructor that takes no arguments:
-        public GPIB_USB(string portName, int baudRate, string[] initController, string dataRoot)
+        public GPIB_USB(string portName, int baudRate, string[] initController, string dataRoot,
+                        List<GPIBDevice> gpibDevices
+            )
         {
+            consoleOutput = true ;
             try
             {
                 DirectoryInfo di = Directory.CreateDirectory(dataRoot + Path.DirectorySeparatorChar + "gpib_controller");
@@ -68,6 +75,35 @@ namespace dnPrologix.serial
                 Console.WriteLine($"GPIB_USB: init Controller: {initController[i]}");
                 serialPort.WriteLine(initController[i]);
             }
+
+            //
+            // The gpibDECIVES conntected to this controller
+            //
+            Console.WriteLine( "Connected gpibDevices to this Controller" );
+            //ObjectDumper.Dump( gpibDevices );
+
+            gpibDevices.ForEach( d => {
+                Console.WriteLine( $"\tid= {d.id}");
+                Console.WriteLine( $"\taddress= {d.address}");
+                setGpibAddress( d.address );
+                d.init.ForEach( c => {
+                    //Console.WriteLine( $"GPIB address {d.address}: cmd={c}");
+                    gpibCommand( c ) ;
+                });
+            });
+        }
+
+        /*
+         * Send a command the current GPIB device
+        */
+        public  void gpibCommand( string command  ) {
+            Console.WriteLine( $"> gpibComamand: address: {_currentAddress} -- gpibCommand {command}");
+            serialPort.WriteLine( command );
+        }
+        public void setGpibAddress( int address ) {
+            _currentAddress = address;
+            Console.WriteLine( $"> setGpibAddress to {address}");
+            serialPort.WriteLine( $"++addr {address}");
         }
         public void close()
         {
@@ -105,7 +141,7 @@ namespace dnPrologix.serial
         {
             // StreamWriter writer = new StreamWriter(_logFile);  
             StreamWriter writer = null ;
-            Console.WriteLine( $"GPIB_USB: Read is started. Log file == {_logFile}");
+            Console.WriteLine( $"GPIB_USB: Read is started.");
 
             string fileName = _dataRoot + Path.DirectorySeparatorChar + "gpib_controller" + Path.DirectorySeparatorChar + "deviceData_";
             int fileCount = 0 ;
@@ -114,6 +150,7 @@ namespace dnPrologix.serial
             {
                 try
                 {
+                    // Read from serialPort.
                     string message = serialPort.ReadLine();
                     // Write to file
                     if( readCount++ % 100 == 0 ) {
@@ -126,8 +163,12 @@ namespace dnPrologix.serial
                         Console.WriteLine( "Create file: "+ fileCount.ToString("000000.##"));
                     }
                     //Console.WriteLine( $"DATA to file: {message}");
+                    // Write the bytes from the serialPort to the log-file
                     writer.Write( message );
-                    Console.WriteLine(message);
+
+                    if( consoleOutput ) {
+                        Console.WriteLine(message);
+                    }
 
                     if (_wsConnections != null)
                     {
@@ -142,8 +183,10 @@ namespace dnPrologix.serial
                 catch (TimeoutException) { }
             }
             Console.WriteLine($"Closing serialPort {serialPort.PortName}");
-            writer.Close() ;
             serialPort.Close();
+
+            Console.WriteLine( "Closing log file ");
+            writer.Close() ;
         }
 
         public void Read2(object v)

@@ -1,7 +1,7 @@
 {
   "dataRoot": "/tmp/abc",
   "GpibController": {
-    "device": "COM5",
+    "device": "COM4",
     "init": ["++rst", "++clr", "++mode 1", "++eos 0", "++auto 1", "++ver" ],
     "GpibDevices": [
       {

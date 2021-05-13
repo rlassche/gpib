@@ -31,19 +31,22 @@ public class PortChat
 
         GPIB_USB g = null;
         // Default config file. Override file with ARGV
-        string configFile = "gpib.json";
+        string configFile = null;
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            defaultSerialPort = "/dev/ttyUSB0";
+            //defaultSerialPort = "/dev/ttyUSB0";
+            configFile = "gpib-linux.json";
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            defaultSerialPort = "COM5";
+            // defaultSerialPort = "COM5";
+            configFile = "gpib.json";
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            defaultSerialPort = "/dev/ttyUSB0";
+            //defaultSerialPort = "/dev/ttyUSB0";
+            configFile = "gpib-osx.json";
         }
         else
         {
@@ -63,7 +66,7 @@ public class PortChat
         {
             string json = r.ReadToEnd();
             GpibConfig c = Newtonsoft.Json.JsonConvert.DeserializeObject<GpibConfig>(json);
-            //Console.WriteLine(ObjectDumper.Dump(c));
+            // Console.WriteLine(ObjectDumper.Dump(c));
             if (c.dataRoot == null)
             {
                 _dataRoot = System.Environment.CurrentDirectory + Path.DirectorySeparatorChar + "data";
@@ -106,9 +109,16 @@ public class PortChat
                         Console.WriteLine( "     : gpib.json => GpibController.init [] ");
                         return ;
                     }
+                    if( c.gpibController.gpibDevices == null ) {
+                        Console.WriteLine( "ERROR: NO Gpib Devices found.");
+                        Console.WriteLine( "     : gpib.json => GpibController.GpibDevices [] ");
+                        return ;
+                    }
+                    
+                    // Console.WriteLine("gpibDevices: "+ ObjectDumper.Dump(c.gpibController.gpibDevices));
 
                     initController = c.gpibController.init.ToArray() ;
-                    g = new GPIB_USB(defaultSerialPort, 9600, initController, _dataRoot);
+                    g = new GPIB_USB(defaultSerialPort, 9600, initController, _dataRoot, c.gpibController.gpibDevices);
                     _serialPort = g.serialPort;
 
                     // Create a Thread for the GPIB-Controller, and 
@@ -162,7 +172,8 @@ public class PortChat
             {
                 //_serialPort.WriteLine(
                 //    String.Format("<{0}>: {1}", name, message));
-                _serialPort.WriteLine(message);
+                g.gpibCommand( message );
+                //_serialPort.WriteLine(message);
             }
         }
 

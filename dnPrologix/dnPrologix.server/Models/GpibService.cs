@@ -54,7 +54,7 @@ namespace dnPrologix.server.Models
             try
             {
                 string[] cmds = new string[] { "++clr"} ;
-                _g = new GPIB_USB(defaultSerialPort, 9600 , cmds, "dataroot" );
+                _g = new GPIB_USB(defaultSerialPort, 9600 , cmds, "dataroot", null );
                 _serialPort = _g.serialPort;
             }
             catch (System.IO.FileNotFoundException e)
