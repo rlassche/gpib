@@ -13,12 +13,14 @@ using Microsoft.EntityFrameworkCore;
 
 
 using dnPrologix.server.Models;
-
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
+using System.Net.WebSockets;
 
 namespace dnPrologix.server
 {
     public class Startup
     {
+        Dictionary<Guid, WebSocket> wsConnections = new Dictionary<Guid, WebSocket>();
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -29,27 +31,43 @@ namespace dnPrologix.server
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-             // services.AddDbContext<GpibContext>(options => options.UseMySql(Configuration.GetConnectionString("Default") ) );
-             //services.AddDbContext<GpibContext>(options => options.UseMySql( "" );
-                            
-            //MySqlConnection conn = new MySqlConnection(connStr);      
+            Console.WriteLine("ConfigureServices");
+            //Console.WriteLine( $"GpibConfig file in appsettings.json: {gpibConfig}");
+            var cstring = Configuration.GetConnectionString("Default");
+            var gpibConfigFile = Configuration.GetConnectionString( "GpibConfig");
+            Console.WriteLine( $"gpibConfigFile: {gpibConfigFile}");
+            // Use DbSet  to push table definitions to the database (if you want)
+            // So, migrations
+            services.AddDbContextPool<GpibContext>(
+                dbContextOptions => dbContextOptions
+                    .UseMySql(
+                        // Replace with your connection string.
+                        cstring,
+                        // Replace with your server version and type.
+                        // For common usages, see pull request #1233.
+                        new MySqlServerVersion(new Version(10, 1, 48)), // use MariaDbServerVersion for MariaDB
+                        mySqlOptions => mySqlOptions
+                            .CharSetBehavior(CharSetBehavior.NeverAppend))
+                    // Everything from this point on is optional but helps with debugging.
+                    .EnableSensitiveDataLogging()
+                    .EnableDetailedErrors()
+            );
+
+
             services.AddControllersWithViews();
             //
             // Add a custom service. This service can be passed to Controllers.
             //
-            services.AddSingleton<IGpibService>( ServiceProvider => new GpibService(Configuration.GetConnectionString("Default")) );
-            /*
-            services.Add( new ServiceDescriptor(
-                                typeof(GpibContext),
-                                new GpibContext(Configuration.GetConnectionString("Default"))
-                          )
-                        );
-                        */
+            services.AddSingleton<IGpibService>(ServiceProvider => new GpibService(
+                    Configuration.GetConnectionString("Default"),
+                    Configuration.GetConnectionString("GpibConfig")
+                    ));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IGpibService service)
         {
+            Console.WriteLine("Configure");
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -66,6 +84,53 @@ namespace dnPrologix.server
             app.UseRouting();
 
             app.UseAuthorization();
+
+            Console.WriteLine("add.UseWebSockets() ;");
+
+            app.UseWebSockets();
+
+
+            // Handle http upgrades to ws
+            app.Use(async (context, next) =>
+                         {
+                             // A websocket endpoint in the application is /ws
+                             if (context.Request.Path == "/ws")
+                             {
+                                 // Check if the request is indead a Websocketrequest
+                                 if (context.WebSockets.IsWebSocketRequest)
+                                 {
+                                     // Do the ws-handshake to accept the connection
+                                     using (WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync())
+                                     {
+                                         // Generate a Unique Connection Id for administration purposes
+                                         var wsConnectionId = Guid.NewGuid();
+                                         // Register the connection Id
+                                         wsConnections.Add(wsConnectionId, webSocket);
+
+                                         // Console.WriteLine("New WebSocket client. Connection Id: " + wsConnectionId);
+
+                                         // Each connection has it's own Echo space
+                                         Console.WriteLine("Create here dhe await Echo....");
+                                         await service.Echo(webSocket, wsConnections);
+                                         // await Echo(context, webSocket);
+                                     }
+                                 }
+                                 else
+                                 {
+                                     context.Response.StatusCode = 400;
+                                 }
+                             }
+                             else
+                             {
+                                 // Pass to the next in the pipeline
+                                 await next();
+                             }
+
+                         });
+
+            Console.WriteLine( "ALLEEN NU GPIB  DEVICE STARTEN");
+            service.AddGpibDevice( wsConnections ) ;
+            Console.WriteLine( "GPIB  DEVICE IS NU GESTART IN BACKGROUND");
 
             app.UseEndpoints(endpoints =>
             {

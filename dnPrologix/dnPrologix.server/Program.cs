@@ -13,6 +13,7 @@ namespace dnPrologix.server
     {
         public static void Main(string[] args)
         {
+            Console.WriteLine( "dnPrologix.server project");
             CreateHostBuilder(args).Build().Run();
         }
 
@@ -20,6 +21,7 @@ namespace dnPrologix.server
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
+                    // Use the Startup.cs file
                     webBuilder.UseStartup<Startup>();
                 });
     }

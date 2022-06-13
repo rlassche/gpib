@@ -1,0 +1,47 @@
+@model GpibDevice
+
+<form method="post" asp-action="Create">
+    <div class="border p-3">  
+        <!-- ModelOnly, All -->
+        <div asp-validation-summary="All" class="text-danger"></div>
+
+        <div class="form-group row">
+            <h2 class="text-info pl-3"> Add Category</h2>
+        </div>
+
+        <div class="row">
+            <div class="col-8">
+                <div class="form-group row">
+                    <div class="col-4"> <label asp-for="DEVICE_ID"></label> </div>
+                    <div class="col-8"> <input asp-for="DEVICE_ID" class="form-control"/> </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-4"> <label asp-for="DESCRIPTION"></label> </div>
+                    <div class="col-8"> <input asp-for="DESCRIPTION" class="form-control"/> </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-4"> <label asp-for="PAD"></label> </div>
+                    <div class="col-8"> <input asp-for="PAD" class="form-control"/> 
+                    <span asp-validation-for="PAD" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-8 offset-4 row">
+                <div class="form-group row">
+                    <div class="col"> <input type="submit" class="btn btn-info w-100" value="Create"/> </div>
+                    <div class="col"> <a asp-controller="Home"   asp-action="Privacy" class="btn btn-success w-100">Back</a> </div>
+                </div>
+        </div>
+
+        </div>
+    </div>
+
+</form>
+
+<!-- Client side validations -->
+@section Scripts {
+    @{ <partial name="_ValidationScriptsPartial" />}
+}

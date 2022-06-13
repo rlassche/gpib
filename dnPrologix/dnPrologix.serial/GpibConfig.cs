@@ -6,6 +6,7 @@ namespace dnPrologix.serial
     public class GpibController    {
         public string device { get; set; } 
         public List<string> init { get; set; } 
+        public List<GPIBDevice> gpibDevices { get; set; } 
     }
 
     public class GPIBDevice    {
@@ -16,7 +17,7 @@ namespace dnPrologix.serial
 
     public class GpibConfig
     {
+        public string dataRoot {get; set;}
         public GpibController gpibController { get; set; } 
-        public List<GPIBDevice> gpibDevices { get; set; } 
     }
 }

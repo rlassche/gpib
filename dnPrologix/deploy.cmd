@@ -14,11 +14,23 @@ REM
 REM Final directory where 
 SET RESTSERVER_HOME=C:\GPIB
 
+IF "%1" == "" GOTO ERROR
+	echo OKAY, GOTO %1
+	REM
+	REM References the site-specific variables in file : environments\environment.%CONFIGURATION%.ts
+	REM
+	SET CONFIGURATION=%1
+	GOTO %CONFIGURATION%
+:ERROR
+	echo Define git branch: master, develop
+	GOTO EINDE
+:master
+:develop
 
-echo Current branch
-git branch
+git checkout %CONFIGURATION%
 pause
 REM git checkout master
+
 
 
 GOTO PUBLISH
@@ -28,20 +40,13 @@ echo dotnet publish in %DEPLOY_DIR%
 call dotnet publish --output %DEPLOY_DIR% --configuration Release --runtime win-x64 --no-self-contained
 COPY dnPrologix.test\gpib.json %DEPLOY_DIR%\gpib.json.example
 
-DEL C:\temp\gpib-win.zip /Q/F/S
-echo Create file C:\temp\gpib-win.zip
-call powershell Compress-Archive -LiteralPath %DEPLOY_DIR% -DestinationPath C:\temp\gpib-win.zip
+DEL C:\temp\gpib-win-%CONFIGURATION%.zip /Q/F/S
+echo Create file C:\temp\gpib-win-%CONFIGURATION%.zip
+call powershell Compress-Archive -LiteralPath %DEPLOY_DIR% -DestinationPath C:\temp\gpib-win-%CONFIGURATION%.zip
 
-echo SCP c:/temp/gpib-win.zip to pi@rpi4
-call scp c:/temp/gpib-win.zip pi@rpi4:/var/www/l-oss.nl/downloads
+echo SCP c:/temp/gpib-win-%CONFIGURATION%.zip to pi@rpi4
+call scp c:/temp/gpib-win-%CONFIGURATION%.zip pi@rpi4:/var/www/l-oss.nl/downloads
 
-REM
-REM Delete all old files for this backend-server
-REM
-REM echo DEL %RESTSERVER_HOME%
-REM DEL %RESTSERVER_HOME% /Q/F/S
-
-REM xcopy %DEPLOY_DIR%  %RESTSERVER_HOME% /s
 
 
 
