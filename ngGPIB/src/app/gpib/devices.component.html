@@ -10,7 +10,7 @@
     <input [(ngModel)]="taFieldsFormData.DEVICE_ID" [typeahead]="taGetDevice$" name="DEVICE_ID" id="DEVICE_ID"
         #DEVICE_ID [ngClass]="inputClass(DEVICE_ID)" (typeaheadNoResults)="typeaheadNoResults('DEVICE_ID', $event)"
         (typeaheadLoading)="taIsLoading($event)" typeaheadOptionField="DESCRIPTION" [typeaheadScrollable]="true"
-        [ngClass]="gpib_deviceClass()" [typeaheadOptionsInScrollableView]="5" [typeaheadWaitMs]="500"
+         [typeaheadOptionsInScrollableView]="5" [typeaheadWaitMs]="500"
         (typeaheadOnSelect)="onSelect($event, DEVICE_ID)" class="form-control" autocomplete=“off”>
 
     <div class="alert alert-danger" *ngIf="mode=='search' && taFieldsTAError.get('title')">

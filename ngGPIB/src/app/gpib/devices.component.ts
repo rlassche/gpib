@@ -3,7 +3,7 @@ import { taFieldsForm, typeaheadKeys, GPIB_DEVICE, DEVICE_FUNCTION } from '../co
 import { Observable, Observer, throwError } from 'rxjs';
 import { GpibrestService } from '../gpibrest.service'
 import { HttpErrorResponse } from '@angular/common/http';
-import { TypeaheadMatch } from 'ngx-bootstrap';
+import { TypeaheadMatch } from 'ngx-bootstrap/typeahead';
 //import sampleData from '../../assets/config.hp-probook.json';
 
 @Component({
